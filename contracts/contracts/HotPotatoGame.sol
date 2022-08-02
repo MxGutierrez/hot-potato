@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./HotPotato.sol";
 
-contract HotPotatoGame is Ownable {
+contract HotPotatoGame {
     uint8 constant MAX_HOT_POTATOES = 4;
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
 
-    IERC721 public _hotPotatoContract;
+    HotPotato public _hotPotatoContract;
 
     struct Player {
         uint256 joinedAt;
@@ -17,10 +16,10 @@ contract HotPotatoGame is Ownable {
 
     struct Game {
         address owner;
-        uint8 hotPotatoCount;
         uint256 expirationTime;
         uint256 startedAt;
-        uint256 endedAt;
+        uint256 endedAt; // TODO: Find where to end game
+        uint8 hotPotatoCount;
         // Mapping addresses to hot potatoes
         mapping(address => Player) players;
         address[] playerAddrs;
@@ -61,7 +60,7 @@ contract HotPotatoGame is Ownable {
     }
 
     constructor(address hotPotatoContract) public {
-        _hotPotatoContract = IERC721(hotPotatoContract);
+        _hotPotatoContract = new HotPotato();
     }
 
     function createGame() public {
@@ -94,9 +93,12 @@ contract HotPotatoGame is Ownable {
         _games[gameId].hotPotatoCount = hotPotatoCount;
         _games[gameId].expirationTime = expirationTime;
 
-        // TODO: Create hot potatoes
+        for (uint256 i = 0; i < _games[gameId].playersAddrs.length; i++) {
+            // TODO: Randomly assign hotPotatoCount hot potatos
+            _hotPotatoContract.mint(_games[gameId].playersAddrs[i]);
+        }
 
-        _games[gameId].expirationTime.started = true;
+        _games[gameId].expirationTime.startedAt = now;
 
         emit GameStarted(gameId);
     }
@@ -129,10 +131,14 @@ contract HotPotatoGame is Ownable {
         returns (uint256[] winners)
     {
         uint256[] winners;
-        for (uint8 i = 0; i < _playerAddrs.length; i++) {
-            // TODO: Check HotPotato contract to see if each player owns hot potato
-            if (_players[_playerAddrs[i]]) {
-                winners.push(_playerAddrs[i]);
+        for (uint8 i = 0; i < _games[gameId].playerAddrs.length; i++) {
+            if (
+                _hotPotatoContract.balanceOf(
+                    _games[gameId]._playerAddrs[i],
+                    gameId
+                ) == 0
+            ) {
+                winners.push(_games[gameId]._playerAddrs[i]);
             }
         }
         return winners;
