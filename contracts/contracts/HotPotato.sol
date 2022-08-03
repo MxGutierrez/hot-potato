@@ -4,22 +4,21 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// Will have to do a mass creation, see if ERC1155 is better
 contract HotPotato is Ownable, ERC1155 {
-    constructor() Ownable() ERC1155() {}
+    constructor() Ownable() ERC1155("") {}
 
     function mint(address to, uint256 gameId) public onlyOwner {
         _mint(to, gameId, 1, "");
     }
 
     function _beforeTokenTransfer(
-        address operator,
-        address from,
+        address, /* operator */
+        address, /* from */
         address to,
-        uint256[] ids,
-        uint256[] amounts,
-        bytes memory data
-    ) public override {
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory /* data */
+    ) internal virtual override {
         require(ids.length == 1 && amounts.length == 1, "Can't batch transfer");
         require(amounts[0] == 1, "Can't transfer more than 1 token at a time");
 
@@ -30,10 +29,9 @@ contract HotPotato is Ownable, ERC1155 {
     }
 
     function setApprovalForAll(
-        address owner,
-        address operator,
-        bool approved
-    ) public override {
+        address, /* operator */
+        bool /* approved */
+    ) public virtual override {
         revert("Can't approve tokens");
     }
 }

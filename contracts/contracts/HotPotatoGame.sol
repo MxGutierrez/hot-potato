@@ -59,14 +59,15 @@ contract HotPotatoGame {
         _;
     }
 
-    constructor(address hotPotatoContract) public {
+    constructor() {
         _hotPotatoContract = new HotPotato();
     }
 
     function createGame() public {
         uint256 gameId = uint256(keccak256(abi.encodePacked(_gameCount++)));
 
-        _games[gameId] = new Game({owner: msg.sender, playerAddrs: []});
+        Game storage game = _games[gameId];
+        game.owner = msg.sender;
 
         _addPlayer(gameId, msg.sender);
     }
@@ -75,13 +76,13 @@ contract HotPotatoGame {
         uint256 gameId,
         uint8 hotPotatoCount,
         uint256 expirationTime
-    ) onlyOwner(gameId) gameStarted(gameId, false) {
+    ) public onlyOwner(gameId) gameStarted(gameId, false) {
         require(
-            now < expirationTime,
+            block.timestamp < expirationTime,
             "Expiration time should be in the future"
         );
         require(
-            now + MAX_FUTURE_EXPIRATION_TIME >= expirationTime,
+            block.timestamp + MAX_FUTURE_EXPIRATION_TIME >= expirationTime,
             "Expiration time exceeds limit"
         );
         require(_games[gameId].playerAddrs.length > 1, "Not enough players");
@@ -93,12 +94,12 @@ contract HotPotatoGame {
         _games[gameId].hotPotatoCount = hotPotatoCount;
         _games[gameId].expirationTime = expirationTime;
 
-        for (uint256 i = 0; i < _games[gameId].playersAddrs.length; i++) {
+        for (uint256 i = 0; i < _games[gameId].playerAddrs.length; i++) {
             // TODO: Randomly assign hotPotatoCount hot potatos
-            _hotPotatoContract.mint(_games[gameId].playersAddrs[i]);
+            _hotPotatoContract.mint(_games[gameId].playerAddrs[i], gameId);
         }
 
-        _games[gameId].expirationTime.startedAt = now;
+        _games[gameId].startedAt = block.timestamp;
 
         emit GameStarted(gameId);
     }
@@ -119,26 +120,36 @@ contract HotPotatoGame {
     }
 
     function _addPlayer(uint256 gameId, address player) internal {
-        _games[gameId].players[player] = new Player({joinedAt: now});
+        Player storage p = _games[gameId].players[player];
+        p.joinedAt = block.timestamp;
         _games[gameId].playerAddrs.push(player);
 
         emit PlayerJoined(gameId, player);
     }
 
     function getWinners(uint256 gameId)
+        public
         view
         gameEnded(gameId, true)
-        returns (uint256[] winners)
+        returns (address[] memory)
     {
-        uint256[] winners;
+        // The amount of winners is the player count - hot potato count
+        address[] memory winners = new address[](
+            _games[gameId].playerAddrs.length - _games[gameId].hotPotatoCount
+        );
+
+        // Index of stored indices on winners array
+        uint256 w_idx = 0;
+
         for (uint8 i = 0; i < _games[gameId].playerAddrs.length; i++) {
+            // Check if player's address has any hot potatos
             if (
                 _hotPotatoContract.balanceOf(
-                    _games[gameId]._playerAddrs[i],
+                    _games[gameId].playerAddrs[i],
                     gameId
                 ) == 0
             ) {
-                winners.push(_games[gameId]._playerAddrs[i]);
+                winners[w_idx++] = _games[gameId].playerAddrs[i];
             }
         }
         return winners;
