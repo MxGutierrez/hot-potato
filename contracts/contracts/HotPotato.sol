@@ -3,9 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IHotPotatoGame.sol";
 
 contract HotPotato is Ownable, ERC1155 {
-    constructor() Ownable() ERC1155("") {}
+    IHotPotatoGame public _hotPotatoGameContract;
+
+    constructor() Ownable() ERC1155("") {
+        _hotPotatoGameContract = IHotPotatoGame(msg.sender);
+    }
 
     function mint(address to, uint256 gameId) public onlyOwner {
         _mint(to, gameId, 1, "");
@@ -26,6 +31,15 @@ contract HotPotato is Ownable, ERC1155 {
             balanceOf(to, ids[0]) == 0,
             "To address already has hot potato"
         );
+
+        // uint256 rand = uint256(
+        //     keccak256(abi.encodePacked(block.timestamp, block.difficulty))
+        // );
+        if (true) {
+            // TODO: implement check with above's rand
+            // Token id equals game id
+            _hotPotatoGameContract.endGame(ids[0]);
+        }
     }
 
     function setApprovalForAll(

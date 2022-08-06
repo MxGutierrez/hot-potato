@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./HotPotato.sol";
+import "./IHotPotatoGame.sol";
 
-contract HotPotatoGame {
+contract HotPotatoGame is IHotPotatoGame {
     uint8 constant MAX_HOT_POTATOES = 4;
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
@@ -18,7 +19,7 @@ contract HotPotatoGame {
         address owner;
         uint256 expirationTime;
         uint256 startedAt;
-        uint256 endedAt; // TODO: Find where to end game
+        uint256 endedAt;
         uint8 hotPotatoCount;
         // Mapping addresses to hot potatoes
         mapping(address => Player) players;
@@ -94,9 +95,21 @@ contract HotPotatoGame {
         _games[gameId].hotPotatoCount = hotPotatoCount;
         _games[gameId].expirationTime = expirationTime;
 
-        for (uint256 i = 0; i < _games[gameId].playerAddrs.length; i++) {
-            // TODO: Randomly assign hotPotatoCount hot potatos
-            _hotPotatoContract.mint(_games[gameId].playerAddrs[i], gameId);
+        // Copy player addresses array for temporal manipulation
+        address[] memory copy = _games[gameId].playerAddrs;
+
+        // Pseudo-randomness will do
+        uint256 rand = uint256(
+            keccak256(abi.encodePacked(block.timestamp, block.difficulty))
+        );
+
+        for (uint8 i = 0; i < _games[gameId].hotPotatoCount; i++) {
+            uint256 k = uint256(keccak256(abi.encodePacked(rand, i))) %
+                (copy.length - i);
+            _hotPotatoContract.mint(copy[k], gameId);
+
+            // Remove k indexed item
+            copy[k] = copy[copy.length - 1];
         }
 
         _games[gameId].startedAt = block.timestamp;
@@ -125,6 +138,15 @@ contract HotPotatoGame {
         _games[gameId].playerAddrs.push(player);
 
         emit PlayerJoined(gameId, player);
+    }
+
+    function endGame(uint256 gameId) external gameEnded(gameId, false) {
+        // Only hot potato contract is allowed to end game
+        require(msg.sender == address(_hotPotatoContract));
+
+        _games[gameId].endedAt = block.timestamp;
+
+        emit GameEnded(gameId);
     }
 
     function getWinners(uint256 gameId)
