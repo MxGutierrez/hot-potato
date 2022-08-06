@@ -176,4 +176,12 @@ contract HotPotatoGame is IHotPotatoGame {
         }
         return winners;
     }
+
+    function getPlayerCount(uint256 gameId) external view returns (uint256) {
+        return _games[gameId].playerAddrs.length;
+    }
+
+    function hasGameEnded(uint256 gameId) external view returns (bool) {
+        return _games[gameId].endedAt > 0;
+    }
 }

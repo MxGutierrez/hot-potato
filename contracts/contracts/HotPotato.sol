@@ -32,11 +32,20 @@ contract HotPotato is Ownable, ERC1155 {
             "To address already has hot potato"
         );
 
-        // uint256 rand = uint256(
-        //     keccak256(abi.encodePacked(block.timestamp, block.difficulty))
-        // );
-        if (true) {
-            // TODO: implement check with above's rand
+        if (_hotPotatoGameContract.hasGameEnded(ids[0])) {
+            // Allow transfer to take place after game has finished (result has already been persisted)
+            return;
+        }
+
+        // Pseudo-randomness will do
+        uint256 rand = uint256(
+            keccak256(abi.encodePacked(block.timestamp, block.difficulty))
+        );
+
+        uint256 playerCount = _hotPotatoGameContract.getPlayerCount(ids[0]);
+
+        // Check drawn number between 1-100 lays under player count defined threshold
+        if ((rand % 100) <= (20 - playerCount)) {
             // Token id equals game id
             _hotPotatoGameContract.endGame(ids[0]);
         }
