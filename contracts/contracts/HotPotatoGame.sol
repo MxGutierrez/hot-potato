@@ -36,6 +36,7 @@ contract HotPotatoGame is IHotPotatoGame {
     // Used for generating game ids
     uint256 private _gameCount = 0;
 
+    event GameCreated(uint256 indexed gameId);
     event GameStarted(uint256 indexed gameId);
     event GameEnded(uint256 indexed gameId);
     event PlayerJoined(uint256 indexed gameId, address player);
@@ -43,7 +44,7 @@ contract HotPotatoGame is IHotPotatoGame {
 
     modifier gameStarted(uint256 gameId, bool started) {
         require(
-            (_games[gameId].startedAt > 0) == started,
+            (_games[gameId].startedAt != 0) == started,
             started ? "Game hasn't started yet" : "Game already started"
         );
         _;
@@ -51,7 +52,7 @@ contract HotPotatoGame is IHotPotatoGame {
 
     modifier gameEnded(uint256 gameId, bool ended) {
         require(
-            (_games[gameId].endedAt == 0) == ended,
+            (_games[gameId].endedAt != 0) == ended,
             ended ? "Game hasn't ended yet" : "Game has ended"
         );
         _;
@@ -76,6 +77,8 @@ contract HotPotatoGame is IHotPotatoGame {
         Game storage game = _games[gameId];
         game.owner = msg.sender;
 
+        emit GameCreated(gameId);
+
         _addPlayer(gameId, msg.sender);
     }
 
@@ -95,7 +98,7 @@ contract HotPotatoGame is IHotPotatoGame {
         require(_games[gameId].playerAddrs.length > 1, "Not enough players");
         require(
             hotPotatoCount < _games[gameId].playerAddrs.length,
-            "To many hot potatoes"
+            "Too many hot potatoes"
         );
 
         _games[gameId].hotPotatoCount = hotPotatoCount;
@@ -134,8 +137,6 @@ contract HotPotatoGame is IHotPotatoGame {
         );
 
         _addPlayer(gameId, msg.sender);
-
-        emit PlayerJoined(gameId, msg.sender);
     }
 
     function _addPlayer(uint256 gameId, address player) internal {
@@ -146,7 +147,11 @@ contract HotPotatoGame is IHotPotatoGame {
         emit PlayerJoined(gameId, player);
     }
 
-    function endGame(uint256 gameId) external gameEnded(gameId, false) {
+    function endGame(uint256 gameId)
+        external
+        gameStarted(gameId, true)
+        gameEnded(gameId, false)
+    {
         // Only hot potato contract is allowed to end game
         require(msg.sender == address(_hotPotatoContract));
 
@@ -178,7 +183,7 @@ contract HotPotatoGame is IHotPotatoGame {
         return winners;
     }
 
-    function claimWin(uint256 gameId) public gameEnded(gameId, true) {
+    function claimWin(uint256 gameId) external gameEnded(gameId, true) {
         require(
             _isPlayerWinner(gameId, msg.sender),
             "Player not winner of game"
@@ -197,13 +202,18 @@ contract HotPotatoGame is IHotPotatoGame {
     function _isPlayerWinner(uint256 gameId, address player)
         internal
         view
+        gameEnded(gameId, true)
         returns (bool)
     {
         return _hotPotatoContract.balanceOf(player, gameId) == 0;
     }
 
-    function getPlayerCount(uint256 gameId) external view returns (uint256) {
-        return _games[gameId].playerAddrs.length;
+    function getPlayers(uint256 gameId)
+        external
+        view
+        returns (address[] memory)
+    {
+        return _games[gameId].playerAddrs;
     }
 
     function hasGameEnded(uint256 gameId) external view returns (bool) {
