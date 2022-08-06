@@ -7,14 +7,22 @@ services:
     depends_on:
       - ganache
     volumes:
-      - ./contracts:/home/app
-      - /home/app/node_modules
+      - .:/home/app
+      - /home/app/contracts/node_modules
   ganache:
     image: trufflesuite/ganache-cli:v6.12.2
     ports:
       - 8545:8545
     volumes:
       - ganache:/app/chaindb
+  client:
+    build:
+      context: ./client
+    volumes:
+      - ./client:/home/app
+      - /home/app/node_modules
+    ports:
+      - 3000:3000
 
 volumes:
   ganache:

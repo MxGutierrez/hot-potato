@@ -1,14 +1,14 @@
-FROM node:18.7.0-alpine
+FROM node:16.16.0-alpine
 
-RUN mkdir -p /home/app
+RUN apk add make g++ python3
 
-WORKDIR /home/app
+RUN mkdir -p /home/app/contracts
+
+WORKDIR /home/app/contracts
 
 COPY package*.json .
 
 RUN npm install
-
-RUN apk add make g++ python3
 
 RUN npm -g install truffle
 
