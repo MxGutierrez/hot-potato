@@ -12,7 +12,7 @@ contract HotPotato is Ownable, ERC1155 {
         _hotPotatoGameContract = IHotPotatoGame(msg.sender);
     }
 
-    function mint(address to, uint256 gameId) public onlyOwner {
+    function mint(address to, uint256 gameId) external onlyOwner {
         _mint(to, gameId, 1, "");
     }
 

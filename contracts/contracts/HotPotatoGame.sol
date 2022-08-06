@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./Potato.sol";
 import "./HotPotato.sol";
 import "./IHotPotatoGame.sol";
 
@@ -8,11 +9,14 @@ contract HotPotatoGame is IHotPotatoGame {
     uint8 constant MAX_HOT_POTATOES = 4;
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
+    uint256 constant POTATO_WIN_AMOUNT = 100 ^ 18; // 100 tokens
 
     HotPotato public _hotPotatoContract;
+    Potato public _potatoContract;
 
     struct Player {
         uint256 joinedAt;
+        uint256 claimedWinAt;
     }
 
     struct Game {
@@ -35,6 +39,7 @@ contract HotPotatoGame is IHotPotatoGame {
     event GameStarted(uint256 indexed gameId);
     event GameEnded(uint256 indexed gameId);
     event PlayerJoined(uint256 indexed gameId, address player);
+    event PlayerWinClaimed(uint256 indexed gameId, address indexed player);
 
     modifier gameStarted(uint256 gameId, bool started) {
         require(
@@ -62,6 +67,7 @@ contract HotPotatoGame is IHotPotatoGame {
 
     constructor() {
         _hotPotatoContract = new HotPotato();
+        _potatoContract = new Potato();
     }
 
     function createGame() public {
@@ -165,16 +171,35 @@ contract HotPotatoGame is IHotPotatoGame {
 
         for (uint8 i = 0; i < _games[gameId].playerAddrs.length; i++) {
             // Check if player's address has any hot potatos
-            if (
-                _hotPotatoContract.balanceOf(
-                    _games[gameId].playerAddrs[i],
-                    gameId
-                ) == 0
-            ) {
+            if (_isPlayerWinner(gameId, _games[gameId].playerAddrs[i])) {
                 winners[w_idx++] = _games[gameId].playerAddrs[i];
             }
         }
         return winners;
+    }
+
+    function claimWin(uint256 gameId) public gameEnded(gameId, true) {
+        require(
+            _isPlayerWinner(gameId, msg.sender),
+            "Player not winner of game"
+        );
+        require(
+            _games[gameId].players[msg.sender].claimedWinAt == 0,
+            "Player already claimed win"
+        );
+
+        _games[gameId].players[msg.sender].claimedWinAt == block.timestamp;
+        _potatoContract.mint(msg.sender, POTATO_WIN_AMOUNT);
+
+        emit PlayerWinClaimed(gameId, msg.sender);
+    }
+
+    function _isPlayerWinner(uint256 gameId, address player)
+        internal
+        view
+        returns (bool)
+    {
+        return _hotPotatoContract.balanceOf(player, gameId) == 0;
     }
 
     function getPlayerCount(uint256 gameId) external view returns (uint256) {
