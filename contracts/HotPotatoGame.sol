@@ -9,7 +9,7 @@ contract HotPotatoGame is IHotPotatoGame {
     uint8 constant MAX_HOT_POTATOES = 4;
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
-    uint256 constant POTATO_WIN_AMOUNT = 100 ^ 18; // 100 tokens
+    uint256 constant POTATO_WIN_AMOUNT = 100 * (10**18); // 100 tokens
 
     HotPotato public _hotPotatoContract;
     Potato public _potatoContract;
