@@ -6,7 +6,6 @@ import "./HotPotato.sol";
 import "./IHotPotatoGame.sol";
 
 contract HotPotatoGame is IHotPotatoGame {
-    uint8 constant MAX_HOT_POTATOES = 4;
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
     uint256 constant POTATO_GAME_ENTRY_AMOUNT = 50 * (10**18); // 50 tokens
@@ -37,7 +36,7 @@ contract HotPotatoGame is IHotPotatoGame {
     // Used for generating game ids
     uint256 private _gameCount = 0;
 
-    event GameCreated(uint256 indexed gameId);
+    event GameCreated(address indexed owner, uint256 gameId);
     event GameStarted(uint256 indexed gameId);
     event GameEnded(uint256 indexed gameId);
     event PlayerJoined(uint256 indexed gameId, address player);
@@ -88,7 +87,7 @@ contract HotPotatoGame is IHotPotatoGame {
         Game storage game = _games[gameId];
         game.owner = msg.sender;
 
-        emit GameCreated(gameId);
+        emit GameCreated(msg.sender, gameId);
 
         _addPlayer(gameId, msg.sender);
     }
