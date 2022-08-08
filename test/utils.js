@@ -44,6 +44,19 @@ const mineBlock = () => {
   });
 };
 
+const claimAndApprove = async (
+  owner,
+  potatoContract,
+  gameContract,
+  amount = "100000000000000000000" // 100 potatoes (the claimable amount)
+) => {
+  await potatoContract.claim({ from: owner });
+  await potatoContract.approve(gameContract.address, amount, {
+    from: owner,
+  });
+};
+
 module.exports = {
   timeTravelSeconds,
+  claimAndApprove,
 };

@@ -1,21 +1,51 @@
 const hotPotatoGame = artifacts.require("./HotPotatoGame.sol");
 const hotPotato = artifacts.require("./HotPotato.sol");
+const potato = artifacts.require("./Potato.sol");
+const { claimAndApprove } = require("./utils");
 
 contract("HotPotatoGame", async (accounts) => {
   let contract;
   let hotPotatoContract;
+  let potatoContract;
   let gameId;
   const [owner, alice, bob] = accounts;
 
   beforeEach("Setup contract", async () => {
     contract = await hotPotatoGame.new();
     hotPotatoContract = await hotPotato.at(await contract._hotPotatoContract());
+    potatoContract = await potato.at(await contract._potatoContract());
+
+    await claimAndApprove(
+      owner,
+      potatoContract,
+      contract,
+      "50000000000000000000" // 50 potatoes allows for 1 game entry
+    );
+
     gameId = (
       await contract.createGame({ from: owner })
     ).logs[0].args.gameId.toString();
   });
 
+  it("Shouldn't create game if owner can't afford entry cost", async () => {
+    try {
+      await contract.createGame({ from: owner });
+      assert(false, "Should return error");
+    } catch (ex) {
+      assert(
+        ex.message.includes(
+          "Player should approve contract with potato game amount"
+        ),
+        "Should return Player should approve contract with potato game amount error"
+      );
+    }
+  });
+
   it("Should create game", async () => {
+    await potatoContract.approve(contract.address, "50000000000000000000", {
+      from: owner,
+    });
+
     const receipt = await contract.createGame({ from: owner });
 
     assert.equal(receipt.logs.length, 2, "2 events should have been emitted");
@@ -49,6 +79,8 @@ contract("HotPotatoGame", async (accounts) => {
   });
 
   it("Should allow players to join", async () => {
+    await claimAndApprove(alice, potatoContract, contract);
+
     const aliceReceipt = await contract.joinGame(gameId, { from: alice });
 
     assert.equal(
@@ -66,6 +98,8 @@ contract("HotPotatoGame", async (accounts) => {
       alice,
       "Alice should have joined"
     );
+
+    await claimAndApprove(bob, potatoContract, contract);
 
     const bobReceipt = await contract.joinGame(gameId, { from: bob });
 
@@ -86,6 +120,8 @@ contract("HotPotatoGame", async (accounts) => {
   });
 
   it("Shouldn't allow starting game with past expiration date", async () => {
+    await claimAndApprove(alice, potatoContract, contract);
+
     // Join player to avoid single-game player error
     await contract.joinGame(gameId, { from: alice });
 
@@ -130,6 +166,8 @@ contract("HotPotatoGame", async (accounts) => {
 
   it("Shouldn't allow starting game with more or equal hot potatos than players", async () => {
     try {
+      await claimAndApprove(alice, potatoContract, contract);
+
       await contract.joinGame(gameId, { from: alice });
       await contract.startGame(
         gameId,
@@ -150,6 +188,9 @@ contract("HotPotatoGame", async (accounts) => {
   });
 
   it("Should start game", async () => {
+    await claimAndApprove(alice, potatoContract, contract);
+    await claimAndApprove(bob, potatoContract, contract);
+
     await contract.joinGame(gameId, { from: alice });
     await contract.joinGame(gameId, { from: bob });
 
@@ -157,8 +198,8 @@ contract("HotPotatoGame", async (accounts) => {
       gameId,
       1,
       Math.floor(
-        new Date(new Date().setDate(new Date().getDate() + 3)).getTime() / 1000
-      ) // Add 3 days from now
+        new Date(new Date().setDate(new Date().getDate() + 3)).getTime() / 1000 // Add 3 days from now
+      )
     );
 
     assert.equal(receipt.logs.length, 1, "There should be 1 emitted event");
@@ -175,6 +216,8 @@ contract("HotPotatoGame", async (accounts) => {
   });
 
   it("Shouldn't allow joining game after game started", async () => {
+    await claimAndApprove(alice, potatoContract, contract);
+
     await contract.joinGame(gameId, { from: alice });
     await contract.startGame(
       gameId,
@@ -197,6 +240,9 @@ contract("HotPotatoGame", async (accounts) => {
   });
 
   it("Starting game should distribute hot potatoes to players", async () => {
+    await claimAndApprove(alice, potatoContract, contract);
+    await claimAndApprove(bob, potatoContract, contract);
+
     await contract.joinGame(gameId, { from: alice });
     await contract.joinGame(gameId, { from: bob });
 

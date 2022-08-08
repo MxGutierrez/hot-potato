@@ -9,6 +9,7 @@ contract HotPotatoGame is IHotPotatoGame {
     uint8 constant MAX_HOT_POTATOES = 4;
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
+    uint256 constant POTATO_GAME_ENTRY_AMOUNT = 50 * (10**18); // 50 tokens
     uint256 constant POTATO_WIN_AMOUNT = 100 * (10**18); // 100 tokens
 
     HotPotato public _hotPotatoContract;
@@ -58,6 +59,16 @@ contract HotPotatoGame is IHotPotatoGame {
         _;
     }
 
+    modifier affordsGame() {
+        // Check if user has approved contract with game cost amount
+        require(
+            _potatoContract.allowance(msg.sender, address(this)) >=
+                POTATO_GAME_ENTRY_AMOUNT,
+            "Player should approve contract with potato game amount"
+        );
+        _;
+    }
+
     modifier onlyOwner(uint256 gameId) {
         require(
             _games[gameId].owner == msg.sender,
@@ -71,7 +82,7 @@ contract HotPotatoGame is IHotPotatoGame {
         _potatoContract = new Potato();
     }
 
-    function createGame() public {
+    function createGame() public affordsGame {
         uint256 gameId = uint256(keccak256(abi.encodePacked(_gameCount++)));
 
         Game storage game = _games[gameId];
@@ -126,7 +137,11 @@ contract HotPotatoGame is IHotPotatoGame {
         emit GameStarted(gameId);
     }
 
-    function joinGame(uint256 gameId) public gameStarted(gameId, false) {
+    function joinGame(uint256 gameId)
+        public
+        gameStarted(gameId, false)
+        affordsGame
+    {
         require(
             _games[gameId].playerAddrs.length < MAX_PLAYERS,
             "Already at max players"
@@ -140,6 +155,13 @@ contract HotPotatoGame is IHotPotatoGame {
     }
 
     function _addPlayer(uint256 gameId, address player) internal {
+        // Transfer allowed potato to contract
+        _potatoContract.transferFrom(
+            player,
+            address(this),
+            POTATO_GAME_ENTRY_AMOUNT
+        );
+
         Player storage p = _games[gameId].players[player];
         p.joinedAt = block.timestamp;
         _games[gameId].playerAddrs.push(player);
@@ -194,7 +216,15 @@ contract HotPotatoGame is IHotPotatoGame {
         );
 
         _games[gameId].players[msg.sender].claimedWinAt == block.timestamp;
-        _potatoContract.mint(msg.sender, POTATO_WIN_AMOUNT);
+
+        // Split lost potato count evenly to winners
+        uint256 winnerCount = _games[gameId].playerAddrs.length -
+            _games[gameId].hotPotatoCount;
+
+        uint256 lostPotatoAmount = _games[gameId].hotPotatoCount *
+            POTATO_GAME_ENTRY_AMOUNT;
+
+        _potatoContract.transfer(msg.sender, lostPotatoAmount / winnerCount);
 
         emit PlayerWinClaimed(gameId, msg.sender);
     }
