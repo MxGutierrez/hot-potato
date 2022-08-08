@@ -3,15 +3,20 @@ const actions = {
 };
 
 const initialState = {
-  artifact: null,
+  loading: true,
   web3: null,
-  accounts: null,
+  account: null,
   networkID: null,
-  contract: null
+  contracts: {
+    hotPotatoGame: null,
+    hotPotato: null,
+    potato: null,
+  },
 };
 
 const reducer = (state, action) => {
   const { type, data } = action;
+  console.log("setting", action);
   switch (type) {
     case actions.init:
       return { ...state, ...data };
@@ -20,8 +25,4 @@ const reducer = (state, action) => {
   }
 };
 
-export {
-  actions,
-  initialState,
-  reducer
-};
+export { actions, initialState, reducer };
