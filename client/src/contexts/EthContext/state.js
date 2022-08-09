@@ -1,7 +1,3 @@
-const actions = {
-  init: "INIT",
-};
-
 const initialState = {
   loading: true,
   web3: null,
@@ -14,15 +10,6 @@ const initialState = {
   },
 };
 
-const reducer = (state, action) => {
-  const { type, data } = action;
-  console.log("setting", action);
-  switch (type) {
-    case actions.init:
-      return { ...state, ...data };
-    default:
-      throw new Error("Undefined reducer action type");
-  }
-};
+const reducer = (state, data) => ({ ...state, ...data });
 
-export { actions, initialState, reducer };
+export { initialState, reducer };

@@ -60,6 +60,12 @@ function PotatoBalance() {
       },
       fetchBalance
     );
+    contracts.potato.contract.events.Transfer(
+      {
+        filter: { to: account },
+      },
+      fetchBalance
+    );
   }, [account, contracts.potato.contract, fetchBalance]);
 
   const handleClaim = async () => {

@@ -1,14 +1,15 @@
 import { useState } from "react";
 import Button from "./Button";
 import useEth from "../contexts/EthContext/useEth";
+import useGame from "../contexts/game/use";
 import { POTATO_GAME_ENTRY_AMOUNT } from "../constants";
-import web3 from "web3";
 import BN from "bignumber.js";
 
 function JoinOrCreateGame() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const { contracts, account } = useEth();
+  const { dispatch } = useGame();
 
   const handleCreate = async () => {
     setCreating(true);
@@ -22,12 +23,8 @@ function JoinOrCreateGame() {
         .call();
 
       if (BN(allowance).lt(BN(POTATO_GAME_ENTRY_AMOUNT))) {
-        console.log("atroden");
         await contracts.potato.contract.methods
-          .approve(
-            hotPotatoGameContractAddress,
-            BN(POTATO_GAME_ENTRY_AMOUNT).minus(BN(allowance)) // Approve the difference
-          )
+          .approve(hotPotatoGameContractAddress, POTATO_GAME_ENTRY_AMOUNT)
           .send({ from: account });
       }
 
@@ -35,17 +32,9 @@ function JoinOrCreateGame() {
         .createGame()
         .send({ from: account });
 
-      contracts.potato.contract.events.GameCreated(
-        {
-          filter: { owner: account },
-        },
-        console.log
-      );
-
-      console.log(receipt);
+      dispatch({ id: receipt.events.GameCreated.returnValues.gameId });
     } catch (ex) {
       console.log(ex.message);
-      window.test = ex;
     } finally {
       setCreating(false);
     }

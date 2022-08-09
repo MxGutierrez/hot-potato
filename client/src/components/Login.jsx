@@ -1,43 +1,30 @@
 import { useState } from "react";
-import web3 from "web3";
+import Button from "./Button";
 
-function Login({ address, setAddress }) {
+function Login({ web3, setAccount }) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
+    if (!window?.ethereum?.isMetaMask) {
+      return;
+    }
+
     setLoading(true);
-
     try {
-      if (window?.ethereum?.isMetaMask) {
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-
-        setAddress(web3.utils.toChecksumAddress(accounts[0]));
-      }
+      const account = (await web3.eth.requestAccounts())[0];
+      setAccount(account);
     } catch (ex) {
       console.log(ex);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="h-full flex justify-center items-center">
-      {address ? (
-        <p>{address}</p>
-      ) : (
-        <button
-          onClick={handleClick}
-          className="bg-blue-600 px-[10px] py-[20px] rounded-lg flex items-center text-white text-lg"
-        >
-          <img
-            src="/metamask.svg"
-            alt="metamask"
-            className="h-[35px] mr-[10px]"
-          />
-          Connect Wallet {loading}
-        </button>
-      )}
-    </div>
+    <Button onClick={handleClick} loading={loading}>
+      <img src="/metamask.svg" alt="metamask" className="h-[35px] mr-[10px]" />
+      Connect Wallet
+    </Button>
   );
 }
 
