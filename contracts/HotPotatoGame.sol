@@ -21,6 +21,7 @@ contract HotPotatoGame is IHotPotatoGame {
 
     struct Game {
         address owner;
+        uint256 createdAt;
         uint256 expirationTime;
         uint256 startedAt;
         uint256 endedAt;
@@ -41,6 +42,11 @@ contract HotPotatoGame is IHotPotatoGame {
     event GameEnded(uint256 indexed gameId);
     event PlayerJoined(uint256 indexed gameId, address player);
     event PlayerWinClaimed(uint256 indexed gameId, address indexed player);
+
+    modifier gameExists(uint256 gameId) {
+        require(_games[gameId].createdAt > 0, "Game doesn't exist");
+        _;
+    }
 
     modifier gameStarted(uint256 gameId, bool started) {
         require(
@@ -82,9 +88,12 @@ contract HotPotatoGame is IHotPotatoGame {
     }
 
     function createGame() public affordsGame {
-        uint256 gameId = uint256(keccak256(abi.encodePacked(_gameCount++)));
+        // Generate 8 digit game identifier
+        uint256 gameId = uint256(keccak256(abi.encodePacked(_gameCount++))) %
+            (10**8);
 
         Game storage game = _games[gameId];
+        game.createdAt = block.timestamp;
         game.owner = msg.sender;
 
         emit GameCreated(msg.sender, gameId);
@@ -96,7 +105,7 @@ contract HotPotatoGame is IHotPotatoGame {
         uint256 gameId,
         uint8 hotPotatoCount,
         uint256 expirationTime
-    ) public onlyOwner(gameId) gameStarted(gameId, false) {
+    ) public gameExists(gameId) onlyOwner(gameId) gameStarted(gameId, false) {
         require(
             block.timestamp < expirationTime,
             "Expiration time should be in the future"
@@ -138,6 +147,7 @@ contract HotPotatoGame is IHotPotatoGame {
 
     function joinGame(uint256 gameId)
         public
+        gameExists(gameId)
         gameStarted(gameId, false)
         affordsGame
     {
