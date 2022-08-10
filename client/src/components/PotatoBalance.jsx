@@ -1,8 +1,7 @@
 import Button from "./Button";
 import { useState, useEffect, useCallback } from "react";
-import useEth from "../contexts/EthContext/useEth";
 
-function PotatoBalance() {
+function PotatoBalance({ address, contract }) {
   const [claiming, setClaiming] = useState(false);
 
   const [potatoBalance, setPotatoBalance] = useState(null);
@@ -10,14 +9,11 @@ function PotatoBalance() {
 
   const [decimals, setDecimals] = useState(null);
   const [loadingDecimals, setLoadingDecimals] = useState(false);
-  const { account, contracts } = useEth();
 
   const fetchBalance = useCallback(async () => {
     try {
       setLoadingBalance(true);
-      const balance = await contracts.potato.contract.methods
-        .balanceOf(account)
-        .call();
+      const balance = await contract.methods.balanceOf(address).call();
 
       setPotatoBalance(balance);
     } catch (ex) {
@@ -25,21 +21,19 @@ function PotatoBalance() {
     } finally {
       setLoadingBalance(false);
     }
-  }, [account, contracts.potato.contract]);
+  }, [address, contract]);
 
   // Get user balance
   useEffect(() => {
     fetchBalance();
-  }, [account, contracts.potato.contract, fetchBalance]);
+  }, [address, contract, fetchBalance]);
 
   // Get ERC20 decimals
   useEffect(() => {
     const fetchDecimals = async () => {
       try {
         setLoadingDecimals(true);
-        const decimals = await contracts.potato.contract.methods
-          .decimals()
-          .call();
+        const decimals = await contract.methods.decimals().call();
 
         setDecimals(decimals);
       } catch (ex) {
@@ -50,28 +44,34 @@ function PotatoBalance() {
     };
 
     fetchDecimals();
-  }, [contracts.potato.contract]);
+  }, [contract]);
 
   // Listen for Transfer events
   useEffect(() => {
-    contracts.potato.contract.events.Transfer(
-      {
-        filter: { from: account },
-      },
-      fetchBalance
-    );
-    contracts.potato.contract.events.Transfer(
-      {
-        filter: { to: account },
-      },
-      fetchBalance
-    );
-  }, [account, contracts.potato.contract, fetchBalance]);
+    const subscriptions = [
+      contract.events.Transfer(
+        {
+          filter: { from: address },
+        },
+        fetchBalance
+      ),
+      contract.events.Transfer(
+        {
+          filter: { to: address },
+        },
+        fetchBalance
+      ),
+    ];
+
+    return () => {
+      subscriptions.forEach((sub) => sub.unsubscribe());
+    };
+  }, [address, contract, fetchBalance]);
 
   const handleClaim = async () => {
     setClaiming(true);
     try {
-      await contracts.potato.contract.methods.claim().send({ from: account });
+      await contract.methods.claim().send({ from: address });
     } catch (ex) {
       console.log(ex);
     } finally {

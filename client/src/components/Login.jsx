@@ -1,18 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "./Button";
 
-function Login({ web3, setAccount }) {
+function Login({ web3, setAddress }) {
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleChange = () => {
+      console.log("accountsChanged");
+    };
+
+    window.ethereum.on("accountsChanged", handleChange);
+    return () => {
+      window.ethereum.removeListener("accountsChanged", handleChange);
+    };
+  }, []);
 
   const handleClick = async () => {
     if (!window?.ethereum?.isMetaMask) {
+      // TODO: Handle this with some error alert or smth
       return;
     }
 
     setLoading(true);
     try {
-      const account = (await web3.eth.requestAccounts())[0];
-      setAccount(account);
+      const address = (await web3.eth.requestAccounts())[0];
+      setAddress(address);
     } catch (ex) {
       console.log(ex);
     } finally {

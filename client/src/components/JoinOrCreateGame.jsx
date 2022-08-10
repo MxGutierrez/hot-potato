@@ -1,42 +1,72 @@
 import { useState } from "react";
-import Button from "./Button";
-import useEth from "../contexts/EthContext/useEth";
-import useGame from "../contexts/game/use";
-import { POTATO_GAME_ENTRY_AMOUNT } from "../constants";
 import BN from "bignumber.js";
 
-function JoinOrCreateGame() {
+import { POTATO_GAME_ENTRY_AMOUNT } from "../constants";
+import Button from "./Button";
+
+function JoinOrCreateGame({
+  address,
+  hotPotatoGameContract,
+  potatoContract,
+  setGameId,
+}) {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
-  const { contracts, account } = useEth();
-  const { dispatch } = useGame();
+  const [promptGameId, setPromptGameId] = useState(false);
+  const [localGameId, setLocalGameId] = useState("");
 
   const handleCreate = async () => {
     setCreating(true);
+    console.log(potatoContract);
 
-    const hotPotatoGameContractAddress =
-      contracts.hotPotatoGame.contract._address;
     try {
       // Check if contract has enough potato allowance
-      const allowance = await contracts.potato.contract.methods
-        .allowance(account, hotPotatoGameContractAddress)
+      const allowance = await potatoContract.methods
+        .allowance(address, hotPotatoGameContract._address)
         .call();
 
       if (BN(allowance).lt(BN(POTATO_GAME_ENTRY_AMOUNT))) {
-        await contracts.potato.contract.methods
-          .approve(hotPotatoGameContractAddress, POTATO_GAME_ENTRY_AMOUNT)
-          .send({ from: account });
+        await potatoContract.methods
+          .approve(hotPotatoGameContract._address, POTATO_GAME_ENTRY_AMOUNT)
+          .send({ from: address });
       }
 
-      const receipt = await contracts.hotPotatoGame.contract.methods
+      const receipt = await hotPotatoGameContract.methods
         .createGame()
-        .send({ from: account });
+        .send({ from: address });
 
-      dispatch({ id: receipt.events.GameCreated.returnValues.gameId });
+      setGameId(receipt.events.GameCreated.returnValues.gameId);
     } catch (ex) {
       console.log(ex.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    setJoining(true);
+
+    try {
+      // Check if contract has enough potato allowance
+      const allowance = await potatoContract.methods
+        .allowance(address, hotPotatoGameContract._address)
+        .call();
+
+      if (BN(allowance).lt(BN(POTATO_GAME_ENTRY_AMOUNT))) {
+        await potatoContract.methods
+          .approve(hotPotatoGameContract._address, POTATO_GAME_ENTRY_AMOUNT)
+          .send({ from: address });
+      }
+
+      await hotPotatoGameContract.methods
+        .joinGame(localGameId)
+        .send({ from: address });
+
+      setGameId(localGameId);
+    } catch (ex) {
+      console.log(ex.message);
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -50,13 +80,25 @@ function JoinOrCreateGame() {
         Create game
       </Button>
 
-      <Button
-        onClick={() => setJoining(true)}
-        loading={joining}
-        disabled={creating || joining}
-      >
-        Join game
-      </Button>
+      <Button onClick={() => setPromptGameId(!promptGameId)}>Join game</Button>
+      {promptGameId && (
+        <div>
+          <input
+            value={localGameId}
+            onChange={(e) => setLocalGameId(e.target.value)}
+            className="border"
+          />
+          {localGameId && (
+            <Button
+              onClick={handleJoin}
+              loading={joining}
+              disabled={creating || joining}
+            >
+              Join!
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
