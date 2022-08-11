@@ -47,7 +47,7 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
         setGameInfo({
           createdAt: gameInfo.createdAt,
           owner: gameInfo.owner,
-          expiresAt: gameInfo.expiresAt,
+          expiresOn: gameInfo.expiresOn,
         });
       } catch (ex) {
         console.log(ex);

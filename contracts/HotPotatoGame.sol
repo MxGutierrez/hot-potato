@@ -8,7 +8,7 @@ import "./IHotPotatoGame.sol";
 contract HotPotatoGame is IHotPotatoGame {
     uint8 constant MAX_PLAYERS = 15;
     uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
-    uint256 constant POTATO_GAME_ENTRY_AMOUNT = 20 * (10**18); // 20 tokens
+    uint256 constant POTATO_GAME_ENTRY_AMOUNT = 1 * (10**18); // 20 tokens
     uint256 constant POTATO_WIN_AMOUNT = 100 * (10**18); // 100 tokens
 
     HotPotato public _hotPotatoContract;
@@ -22,7 +22,7 @@ contract HotPotatoGame is IHotPotatoGame {
     struct Game {
         address owner;
         uint256 createdAt;
-        uint256 expiresAt;
+        uint256 expiresOn;
         uint256 startedAt;
         uint256 endedAt;
         uint8 hotPotatoCount;
@@ -104,14 +104,14 @@ contract HotPotatoGame is IHotPotatoGame {
     function startGame(
         uint256 gameId,
         uint8 hotPotatoCount,
-        uint256 expiresAt
+        uint256 expiresOn
     ) public gameExists(gameId) onlyOwner(gameId) gameStarted(gameId, false) {
         require(
-            block.timestamp < expiresAt,
+            block.timestamp < expiresOn,
             "Expiration time should be in the future"
         );
         require(
-            block.timestamp + MAX_FUTURE_EXPIRATION_TIME >= expiresAt,
+            block.timestamp + MAX_FUTURE_EXPIRATION_TIME >= expiresOn,
             "Expiration time exceeds limit"
         );
         require(_games[gameId].playerAddrs.length > 1, "Not enough players");
@@ -121,7 +121,7 @@ contract HotPotatoGame is IHotPotatoGame {
         );
 
         _games[gameId].hotPotatoCount = hotPotatoCount;
-        _games[gameId].expiresAt = expiresAt;
+        _games[gameId].expiresOn = expiresOn;
 
         // Copy player addresses array for temporal manipulation
         address[] memory copy = _games[gameId].playerAddrs;

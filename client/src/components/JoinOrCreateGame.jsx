@@ -3,6 +3,9 @@ import BN from "bignumber.js";
 
 import { POTATO_GAME_ENTRY_AMOUNT } from "../constants";
 import Button from "./Button";
+import Chevron from "./icons/Chevron";
+import JoinGameForm from "./JoinGameForm";
+import clsx from "clsx";
 
 function JoinOrCreateGame({
   address,
@@ -12,8 +15,7 @@ function JoinOrCreateGame({
 }) {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [promptGameId, setPromptGameId] = useState(false);
-  const [localGameId, setLocalGameId] = useState("");
+  const [promptGameJoinId, setPromptGameJoinId] = useState(false);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -42,7 +44,7 @@ function JoinOrCreateGame({
     }
   };
 
-  const handleJoin = async () => {
+  const handleJoin = async (gameId) => {
     setJoining(true);
 
     try {
@@ -58,10 +60,10 @@ function JoinOrCreateGame({
       }
 
       await hotPotatoGameContract.methods
-        .joinGame(localGameId)
+        .joinGame(gameId)
         .send({ from: address });
 
-      setGameId(localGameId);
+      setGameId(gameId);
     } catch (ex) {
       console.log(ex.message);
     } finally {
@@ -79,25 +81,21 @@ function JoinOrCreateGame({
         Create game
       </Button>
 
-      <Button onClick={() => setPromptGameId(!promptGameId)}>Join game</Button>
-      {promptGameId && (
-        <div>
-          <input
-            value={localGameId}
-            onChange={(e) => setLocalGameId(e.target.value)}
-            className="border"
-          />
-          {localGameId && (
-            <Button
-              onClick={handleJoin}
-              loading={joining}
-              disabled={creating || joining}
-            >
-              Join!
-            </Button>
-          )}
-        </div>
-      )}
+      <Button
+        onClick={() => setPromptGameJoinId(!promptGameJoinId)}
+        className="flex items-center justify-between"
+      >
+        <span className="w-5"></span>
+        <span>Join game</span>
+        <Chevron
+          dir={promptGameJoinId ? "up" : "down"}
+          className="text-white h-5 w-5"
+        />
+      </Button>
+
+      <div className={clsx({ hidden: !promptGameJoinId })}>
+        <JoinGameForm joinGame={handleJoin} contract={hotPotatoGameContract} />
+      </div>
     </div>
   );
 }

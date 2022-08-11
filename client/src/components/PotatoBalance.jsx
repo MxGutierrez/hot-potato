@@ -109,10 +109,6 @@ function PotatoBalance({ address, contract }) {
             </button>
           )}
         </div>
-
-        {/* <Button onClick={handleClaim} loading={claiming}>
-          Claim
-        </Button> */}
       </div>
     </div>
   );

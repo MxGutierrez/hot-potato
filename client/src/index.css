@@ -4,6 +4,7 @@
 
 * {
   --primary-color: #6366f1;
+  outline: none;
 }
 
 body {
@@ -20,4 +21,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+button > svg:hover {
+  opacity: 70%;
 }
