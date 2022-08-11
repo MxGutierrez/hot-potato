@@ -13,7 +13,7 @@ function Button({ onClick, loading, disabled, children }) {
     <button
       onClick={handleClick}
       className={clsx(
-        "bg-blue-600 mt-3 rounded-md p-[10px] text-white flex items-center justify-center h-[44px]",
+        "bg-primary mt-3 rounded-lg py-3 px-4 text-white flex items-center justify-center h-[44px] font-semibold",
         { "opacity-90 cursor-not-allowed": disabled }
       )}
     >

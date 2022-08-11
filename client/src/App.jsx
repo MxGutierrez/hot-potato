@@ -20,7 +20,7 @@ function App() {
     <>
       <Header address={address} />
       <div className="flex-1 flex flex-col pt-6 pb-12 bg-[#f9fafb]">
-        <div className="container flex-1">
+        <div className="container flex-1 flex flex-col">
           {address ? (
             <div>
               {contracts.potato && (
@@ -42,7 +42,7 @@ function App() {
               )}
             </div>
           ) : (
-            <div className="h-full flex justify-center items-center">
+            <div className="flex-1 flex justify-center items-center">
               <Login web3={web3} setAddress={setAddress} />
             </div>
           )}

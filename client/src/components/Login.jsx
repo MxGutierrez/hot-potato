@@ -34,8 +34,8 @@ function Login({ web3, setAddress }) {
 
   return (
     <Button onClick={handleClick} loading={loading}>
-      <img src="/metamask.svg" alt="metamask" className="h-[35px] mr-[10px]" />
-      Connect Wallet
+      <img src="/metamask.svg" alt="metamask" className="h-[25px] mr-[10px]" />
+      Login with MetaMask
     </Button>
   );
 }
