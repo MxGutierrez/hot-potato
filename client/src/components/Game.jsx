@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import clsx from "clsx";
 import Button from "./Button";
 import enGB from "date-fns/locale/en-GB";
 
@@ -11,7 +12,9 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
   const [gameStarted, setGameStarted] = useState(false);
   const [expirationDate, setExpirationDate] = useState(null);
   const [hotPotatoCount, setHotPotatoCount] = useState(2);
-  const [players, setPlayers] = useState([address]);
+  const [players, setPlayers] = useState([]);
+  const [gameInfo, setGameInfo] = useState({});
+  const [fetchingGameInfo, setFetchingGameInfo] = useState(false);
 
   useEffect(() => {
     registerLocale("en-GB", enGB);
@@ -26,16 +29,34 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
       console.log(receipt);
     } catch (ex) {
       console.log("error", ex);
-      window.test = ex;
     } finally {
       setStartingGame(false);
     }
   };
 
   useEffect(() => {
-    if (!id) {
-      return;
-    }
+    const getGameInfo = async () => {
+      setFetchingGameInfo(true);
+      try {
+        const [players, gameInfo] = await Promise.all([
+          hotPotatoGameContract.methods.getPlayers(id).call(),
+          hotPotatoGameContract.methods._games(id).call(),
+        ]);
+
+        setPlayers(players);
+        setGameInfo({
+          createdAt: gameInfo.createdAt,
+          owner: gameInfo.owner,
+          expiresAt: gameInfo.expiresAt,
+        });
+      } catch (ex) {
+        console.log(ex);
+      } finally {
+        setFetchingGameInfo(false);
+      }
+    };
+
+    getGameInfo();
 
     const subscriptions = [
       hotPotatoGameContract.events.PlayerJoined(
@@ -67,7 +88,7 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
     ];
 
     return () => {
-      subscriptions.forEach((sub) => console.log(sub.unsubscribe()));
+      subscriptions.forEach((sub) => sub.unsubscribe());
     };
   }, [id]);
 
@@ -104,7 +125,12 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
 
       <h2>Players</h2>
       {players.map((address) => (
-        <p key={address}>{address}</p>
+        <p
+          key={address}
+          className={clsx({ "font-bold": address === gameInfo.owner })}
+        >
+          {address}
+        </p>
       ))}
       {gameStarted && <p>Game started!!!!!!!!</p>}
     </div>

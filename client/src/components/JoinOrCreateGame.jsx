@@ -17,7 +17,6 @@ function JoinOrCreateGame({
 
   const handleCreate = async () => {
     setCreating(true);
-    console.log(potatoContract);
 
     try {
       // Check if contract has enough potato allowance
