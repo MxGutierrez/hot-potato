@@ -18,16 +18,19 @@ function useContracts(web3, networkId) {
         HotPotatoGame.networks[networkId].address
       );
 
+      const [hotPotatoContractAddress, potatoContractAddress] =
+        await Promise.all([
+          hotPotatoGameContract.methods._hotPotatoContract().call(),
+          hotPotatoGameContract.methods._potatoContract().call(),
+        ]);
+
       setContracts({
         hotPotatoGame: hotPotatoGameContract,
         hotPotato: new web3.eth.Contract(
           HotPotato.abi,
-          await hotPotatoGameContract.methods._hotPotatoContract().call()
+          hotPotatoContractAddress
         ),
-        potato: new web3.eth.Contract(
-          Potato.abi,
-          await hotPotatoGameContract.methods._potatoContract().call()
-        ),
+        potato: new web3.eth.Contract(Potato.abi, potatoContractAddress),
       });
     };
 
