@@ -1,8 +1,10 @@
-import Button from "./Button";
 import { useState, useEffect, useCallback } from "react";
+import PlusCircle from "./icons/PlusCircle";
+import { POTATO_CLAIM_INTERVAL_DAYS } from "../constants";
 
 function PotatoBalance({ address, contract }) {
   const [claiming, setClaiming] = useState(false);
+  const [canClaim, setCanClaim] = useState(false);
 
   const [potatoBalance, setPotatoBalance] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
@@ -13,7 +15,19 @@ function PotatoBalance({ address, contract }) {
   const fetchBalance = useCallback(async () => {
     try {
       setLoadingBalance(true);
-      const balance = await contract.methods.balanceOf(address).call();
+      const [balance, lastClaimTimestamp] = await Promise.all([
+        contract.methods.balanceOf(address).call(),
+        contract.methods._lastClaims(address).call(),
+      ]);
+
+      setCanClaim(
+        new Date() >
+          new Date(
+            (parseInt(lastClaimTimestamp) +
+              60 * 60 * 24 * POTATO_CLAIM_INTERVAL_DAYS) *
+              1000
+          )
+      );
 
       setPotatoBalance(balance);
     } catch (ex) {
@@ -80,13 +94,26 @@ function PotatoBalance({ address, contract }) {
   };
 
   return (
-    <div>
-      {decimals && potatoBalance !== null && (
-        <p>{potatoBalance / 10 ** decimals}</p>
-      )}
-      <Button onClick={handleClaim} loading={claiming}>
-        Claim
-      </Button>
+    <div className="w-full flex justify-end">
+      <div className="flex items-center">
+        <div className="flex items-center space-x-2.5 border border-gray-200 shadow-sm bg-white rounded-full py-2 px-4">
+          <img src="/potato.svg" className="w-8 h-8" />
+          {decimals && potatoBalance !== null && (
+            <p className="text-lg">
+              {(potatoBalance / 10 ** decimals).toFixed(2)}
+            </p>
+          )}
+          {canClaim && (
+            <button onClick={handleClaim}>
+              <PlusCircle className="h-5 w-5 text-primary" />
+            </button>
+          )}
+        </div>
+
+        {/* <Button onClick={handleClaim} loading={claiming}>
+          Claim
+        </Button> */}
+      </div>
     </div>
   );
 }

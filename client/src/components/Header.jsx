@@ -26,13 +26,15 @@ function Header({ address }) {
           {address && (
             <button
               onClick={copyAddress}
-              className="flex items-center space-x-3 group"
+              className="flex items-center space-x-3.5 group"
             >
-              <div className="relative h-[50px] w-[50px]">
-                <Jazzicon diameter={50} seed={jsNumberForAddress(address)} />
+              <div className="relative h-[45px] w-[45px]">
+                <Jazzicon diameter={45} seed={jsNumberForAddress(address)} />
                 <div className="hidden absolute left-0 top-0 z-20 bg-white bg-opacity-75 group-hover:flex justify-center items-center h-full w-full transition-all">
                   {copied ? (
-                    <p className="text-[0.7rem] text-primary">Copied</p>
+                    <p className="text-[0.6rem] text-primary font-semibold">
+                      Copied
+                    </p>
                   ) : (
                     <ClipboardLogo className="h-6 w-6 text-primary" />
                   )}

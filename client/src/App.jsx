@@ -19,14 +19,13 @@ function App() {
   return (
     <>
       <Header address={address} />
-      <div>
-        <div>
+      <div className="flex-1 flex flex-col pt-6 pb-12 bg-[#f9fafb]">
+        <div className="container flex-1">
           {address ? (
             <div>
               {contracts.potato && (
                 <PotatoBalance address={address} contract={contracts.potato} />
               )}
-              <Address address={address} />
               <JoinOrCreateGame
                 address={address}
                 setGameId={setGameId}
