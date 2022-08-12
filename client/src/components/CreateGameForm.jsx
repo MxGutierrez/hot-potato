@@ -37,6 +37,7 @@ function CreateGameForm({ createGame, disabled }) {
             onChange={setExpirationDate}
             locale="en-GB"
             placeholderText="Select date"
+            autoComplete="off"
             minDate={dayjs().toDate()}
             maxDate={dayjs()
               .add(MAX_FUTURE_EXPIRATION_TIME_DAYS, "day")

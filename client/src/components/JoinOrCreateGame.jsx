@@ -2,12 +2,11 @@ import { useState } from "react";
 import BN from "bignumber.js";
 
 import { POTATO_GAME_ENTRY_AMOUNT } from "../constants";
-import Button from "./Button";
-import Chevron from "./icons/Chevron";
 import JoinGameForm from "./JoinGameForm";
 import CreateGameForm from "./CreateGameForm";
+import parseJsonRpcError from "../utils/parseJsonRpcError";
 
-import clsx from "clsx";
+import { Jigsaw, Ticket } from "./icons";
 
 function JoinOrCreateGame({
   address,
@@ -16,9 +15,7 @@ function JoinOrCreateGame({
   setGameId,
 }) {
   const [creating, setCreating] = useState(false);
-  const [promptGameCreate, setPromptGameCreate] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [promptGameJoinId, setPromptGameJoinId] = useState(false);
 
   const handleCreate = async (expirationDate) => {
     setCreating(true);
@@ -64,11 +61,15 @@ function JoinOrCreateGame({
 
       await hotPotatoGameContract.methods
         .joinGame(gameId)
+        .call({ from: address });
+
+      await hotPotatoGameContract.methods
+        .joinGame(gameId)
         .send({ from: address });
 
       setGameId(gameId);
     } catch (ex) {
-      console.log(ex.message);
+      console.log(parseJsonRpcError(ex));
     } finally {
       setJoining(false);
     }
@@ -77,51 +78,31 @@ function JoinOrCreateGame({
   return (
     <div className="flex flex-col w-full m-auto items-center justify-center">
       <div className="max-w-[400px] w-full">
-        <Button
-          onClick={() => setPromptGameCreate(!promptGameCreate)}
-          className="flex items-center justify-between w-full"
-          type="outlined"
-        >
-          <span className="w-5"></span>
-          <span>Create game</span>
-          <Chevron
-            dir={promptGameCreate ? "up" : "down"}
-            className="text-primary h-5 w-5"
-          />
-        </Button>
+        <h2 className="text-4xl text-primary flex items-center font-light">
+          <Jigsaw className="h-8 w-8 mr-3" strokeWidth={1.5} />
+          Create
+        </h2>
 
-        <div className={clsx({ hidden: !promptGameCreate })}>
-          <CreateGameForm
-            createGame={handleCreate}
-            disabled={creating || joining}
-          />
-        </div>
+        <CreateGameForm
+          createGame={handleCreate}
+          disabled={creating || joining}
+        />
       </div>
 
       <hr className="w-full my-8" />
 
       <div className="max-w-[400px] w-full">
-        <Button
-          onClick={() => setPromptGameJoinId(!promptGameJoinId)}
-          className="flex items-center justify-between w-full"
-          type="outlined"
-        >
-          <span className="w-5"></span>
-          <span>Join game</span>
-          <Chevron
-            dir={promptGameJoinId ? "up" : "down"}
-            className="text-primary h-5 w-5"
-          />
-        </Button>
+        <h2 className="text-4xl text-primary flex items-center font-light">
+          <Ticket className="h-8 w-8 mr-3 " strokeWidth={1.5} filled={true} />
+          Join
+        </h2>
 
-        <div className={clsx({ hidden: !promptGameJoinId })}>
-          <JoinGameForm
-            address={address}
-            joinGame={handleJoin}
-            contract={hotPotatoGameContract}
-            disabled={creating || joining}
-          />
-        </div>
+        <JoinGameForm
+          address={address}
+          joinGame={handleJoin}
+          contract={hotPotatoGameContract}
+          disabled={creating || joining}
+        />
       </div>
     </div>
   );

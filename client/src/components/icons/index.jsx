@@ -6,3 +6,5 @@ export { default as Chevron } from "./Chevron";
 export { default as Search } from "./Search";
 export { default as Cross } from "./Cross";
 export { default as ExclamationCircle } from "./ExclamationCircle";
+export { default as Jigsaw } from "./Jigsaw";
+export { default as Ticket } from "./Ticket.jsx";

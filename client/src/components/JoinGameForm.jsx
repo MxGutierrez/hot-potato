@@ -88,6 +88,7 @@ function JoinGameForm({ address, joinGame, contract, disabled }) {
             value={gameId}
             onChange={(e) => setGameId(e.target.value)}
             className="py-0.5 flex-1"
+            autoComplete="off"
             placeholder="12345678"
           />
           <button onClick={() => setGameId("")}>
@@ -134,7 +135,7 @@ function JoinGameForm({ address, joinGame, contract, disabled }) {
         onClick={handleJoin}
         loading={joining}
         disabled={disabled}
-        unselectable={!searchResult}
+        unselectable={!searchResult || searchError}
       >
         Join!
       </Button>
