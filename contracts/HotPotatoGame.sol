@@ -22,7 +22,7 @@ contract HotPotatoGame is IHotPotatoGame {
     struct Game {
         address owner;
         uint256 createdAt;
-        uint256 expiresOn;
+        uint256 expiresAt;
         uint256 startedAt;
         uint256 endedAt;
         uint8 hotPotatoCount;
@@ -87,13 +87,22 @@ contract HotPotatoGame is IHotPotatoGame {
         _potatoContract = new Potato();
     }
 
-    function createGame() public affordsGame {
+    function createGame(uint256 expiresAt) public affordsGame {
+        require(
+            block.timestamp < expiresAt,
+            "Expiration time should be in the future"
+        );
+        require(
+            block.timestamp + MAX_FUTURE_EXPIRATION_TIME >= expiresAt,
+            "Expiration time exceeds limit"
+        );
         // Generate 8 digit game identifier
         uint256 gameId = uint256(keccak256(abi.encodePacked(_gameCount++))) %
             (10**8);
 
         Game storage game = _games[gameId];
         game.createdAt = block.timestamp;
+        game.expiresAt = expiresAt;
         game.owner = msg.sender;
 
         emit GameCreated(msg.sender, gameId);
@@ -101,19 +110,12 @@ contract HotPotatoGame is IHotPotatoGame {
         _addPlayer(gameId, msg.sender);
     }
 
-    function startGame(
-        uint256 gameId,
-        uint8 hotPotatoCount,
-        uint256 expiresOn
-    ) public gameExists(gameId) onlyOwner(gameId) gameStarted(gameId, false) {
-        require(
-            block.timestamp < expiresOn,
-            "Expiration time should be in the future"
-        );
-        require(
-            block.timestamp + MAX_FUTURE_EXPIRATION_TIME >= expiresOn,
-            "Expiration time exceeds limit"
-        );
+    function startGame(uint256 gameId, uint8 hotPotatoCount)
+        public
+        gameExists(gameId)
+        onlyOwner(gameId)
+        gameStarted(gameId, false)
+    {
         require(_games[gameId].playerAddrs.length > 1, "Not enough players");
         require(
             hotPotatoCount < _games[gameId].playerAddrs.length,
@@ -121,7 +123,6 @@ contract HotPotatoGame is IHotPotatoGame {
         );
 
         _games[gameId].hotPotatoCount = hotPotatoCount;
-        _games[gameId].expiresOn = expiresOn;
 
         // Copy player addresses array for temporal manipulation
         address[] memory copy = _games[gameId].playerAddrs;

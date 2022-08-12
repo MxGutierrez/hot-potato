@@ -1,7 +1,20 @@
 import Spinner from "./Spinner";
 import clsx from "clsx";
 
-function Button({ onClick, loading, disabled, children, className }) {
+const typeClassMap = {
+  primary: "bg-primary text-white",
+  outlined: "border border-primary bg-white text-primary",
+};
+
+function Button({
+  onClick,
+  loading,
+  disabled,
+  unselectable,
+  type = "primary",
+  children,
+  className,
+}) {
   const handleClick = () => {
     if (disabled || loading) {
       return;
@@ -13,12 +26,14 @@ function Button({ onClick, loading, disabled, children, className }) {
     <button
       onClick={handleClick}
       className={clsx(
-        "bg-primary mt-3 rounded-lg py-3 px-4 text-white flex items-center justify-center h-[44px] font-semibold",
+        "rounded-lg py-3 px-4 flex items-center justify-center h-[44px] font-semibold",
+        typeClassMap[type],
         { "opacity-90 cursor-not-allowed": disabled },
+        { "bg-gray-300 cursor-default pointer-events-none": unselectable },
         className
       )}
     >
-      {loading ? <Spinner /> : children}
+      {loading ? <Spinner className="h-5 w-5 text-white" /> : children}
     </button>
   );
 }

@@ -1,30 +1,20 @@
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import Button from "./Button";
-import enGB from "date-fns/locale/en-GB";
-
-import DatePicker, { registerLocale } from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { MAX_FUTURE_EXPIRATION_TIME_DAYS } from "../constants";
 
 function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
   const [startingGame, setStartingGame] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [expirationDate, setExpirationDate] = useState(null);
   const [hotPotatoCount, setHotPotatoCount] = useState(2);
   const [players, setPlayers] = useState([]);
   const [gameInfo, setGameInfo] = useState({});
   const [fetchingGameInfo, setFetchingGameInfo] = useState(false);
 
-  useEffect(() => {
-    registerLocale("en-GB", enGB);
-  });
-
   const startGame = async () => {
     setStartingGame(true);
     try {
       const receipt = await hotPotatoGameContract.methods
-        .startGame(id, hotPotatoCount, expirationDate.getTime() / 1000)
+        .startGame(id, hotPotatoCount)
         .send({ from: address });
       console.log(receipt);
     } catch (ex) {
@@ -47,7 +37,7 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
         setGameInfo({
           createdAt: gameInfo.createdAt,
           owner: gameInfo.owner,
-          expiresOn: gameInfo.expiresOn,
+          expiresAt: gameInfo.expiresAt,
         });
       } catch (ex) {
         console.log(ex);
@@ -104,21 +94,6 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
         />
       </label>
 
-      <label>
-        Game expiration:
-        <DatePicker
-          selected={expirationDate}
-          onChange={setExpirationDate}
-          locale="en-GB"
-          placeholderText="Select date"
-          minDate={new Date()}
-          maxDate={
-            new Date(
-              Date.now() + 1000 * 60 * 60 * 24 * MAX_FUTURE_EXPIRATION_TIME_DAYS
-            )
-          }
-        />
-      </label>
       <Button onClick={startGame} loading={startingGame}>
         Start game
       </Button>

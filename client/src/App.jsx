@@ -5,7 +5,6 @@ import Login from "./components/Login";
 import Game from "./components/Game";
 import JoinOrCreateGame from "./components/JoinOrCreateGame";
 import PotatoBalance from "./components/PotatoBalance";
-import Address from "./components/Address";
 import Header from "./components/Header";
 
 function App() {
@@ -22,7 +21,7 @@ function App() {
       <div className="flex-1 flex flex-col pt-6 pb-12 bg-[#f9fafb]">
         <div className="container flex-1 flex flex-col">
           {address ? (
-            <div>
+            <>
               {contracts.potato && (
                 <PotatoBalance address={address} contract={contracts.potato} />
               )}
@@ -40,7 +39,7 @@ function App() {
                   hotPotatoContract={contracts.hotPotatoContract}
                 />
               )}
-            </div>
+            </>
           ) : (
             <div className="flex-1 flex justify-center items-center">
               <Login web3={web3} setAddress={setAddress} />
