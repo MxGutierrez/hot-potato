@@ -27,10 +27,12 @@ function App() {
                 <PotatoBalance address={address} contract={contracts.potato} />
               )}
               <Table
+                address={address}
                 players={[
                   "0x430B1Eb67658F3C8acDdD7c0055bc2549F729526",
                   "0x330B1Eb67658F3C8acDdD7c0055bc2549F729521",
                   "0x7650ED4022eC5EFfbA8E232706991eb05c418D8E",
+                  "0xB787B091155D7C1762227cD23438038266D96971",
                 ]}
               />
               <JoinOrCreateGame

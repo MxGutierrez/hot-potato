@@ -5,20 +5,23 @@ import jazzicon from "jazzicon";
 
 import { useEffect } from "react";
 
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 600;
+
 function Table({ players }) {
   const [points, setPoints] = useState([]);
 
   const drawJazzicon = useCallback((g, { x, y }) => {
     g.clear();
-    g.lineStyle(6, 0xf9fafb);
-    g.drawCircle(x, y, 18);
+    g.lineStyle(22, 0xf9fafb);
+    g.drawCircle(x, y, 60);
     g.endFill();
   }, []);
 
   const drawTable = useCallback((g) => {
     g.clear();
-    g.beginFill(0xff0000, 0.25);
-    g.drawEllipse(250, 250, 100, 60);
+    g.beginFill(0x6366f1, 0.25);
+    g.drawEllipse(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 100, 60);
     g.endFill();
   }, []);
 
@@ -32,7 +35,7 @@ function Table({ players }) {
 
   useEffect(() => {
     // https://stackoverflow.com/questions/58534293/how-can-i-distribute-points-evenly-along-an-oval
-    const [a, b, cx, cy] = [150, 100, 250, 250];
+    const [a, b, cx, cy] = [180, 140, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2];
 
     const points = players.map((address, i) => {
       let t = (2 * Math.PI * i) / players.length;
@@ -53,25 +56,19 @@ function Table({ players }) {
 
   return (
     <Stage
-      width={600}
-      height={400}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
       raf={false}
       renderOnComponentChange={true}
       options={{ antialias: true, backgroundAlpha: 0 }}
     >
-      <Graphics draw={drawTable} />
       {points.map(({ address, x, y }) => (
         <Container key={`${x}:${y}`}>
-          <Sprite
-            x={x}
-            y={y}
-            anchor={0.5}
-            scale={{ x: 0.3, y: 0.3 }}
-            image={generateJazzicon(address)}
-          />
+          <Sprite x={x} y={y} anchor={0.5} image={generateJazzicon(address)} />
           <Graphics draw={(g) => drawJazzicon(g, { x, y })} />
         </Container>
       ))}
+      <Graphics draw={drawTable} />
     </Stage>
   );
 }
