@@ -6,7 +6,6 @@ import Game from "./components/Game";
 import JoinOrCreateGame from "./components/JoinOrCreateGame";
 import PotatoBalance from "./components/PotatoBalance";
 import Header from "./components/Header";
-import Table from "./components/Table";
 
 function App() {
   const [gameId, setGameId] = useState(null);
@@ -26,27 +25,19 @@ function App() {
               {contracts.potato && (
                 <PotatoBalance address={address} contract={contracts.potato} />
               )}
-              <Table
-                address={address}
-                players={[
-                  "0x430B1Eb67658F3C8acDdD7c0055bc2549F729526",
-                  "0x330B1Eb67658F3C8acDdD7c0055bc2549F729521",
-                  "0x7650ED4022eC5EFfbA8E232706991eb05c418D8E",
-                  "0xB787B091155D7C1762227cD23438038266D96971",
-                ]}
-              />
-              <JoinOrCreateGame
-                address={address}
-                setGameId={setGameId}
-                hotPotatoGameContract={contracts.hotPotatoGame}
-                potatoContract={contracts.potato}
-              />
-              {gameId && (
+              {gameId ? (
                 <Game
                   id={gameId}
                   address={address}
                   hotPotatoGameContract={contracts.hotPotatoGame}
-                  hotPotatoContract={contracts.hotPotatoContract}
+                  hotPotatoContract={contracts.hotPotato}
+                />
+              ) : (
+                <JoinOrCreateGame
+                  address={address}
+                  setGameId={setGameId}
+                  hotPotatoGameContract={contracts.hotPotatoGame}
+                  potatoContract={contracts.potato}
                 />
               )}
             </>

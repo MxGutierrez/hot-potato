@@ -1,37 +1,18 @@
-import { Stage, Graphics, Sprite, Container } from "@inlet/react-pixi";
-import { useState, useCallback } from "react";
-import { jsNumberForAddress } from "react-jazzicon";
-import jazzicon from "jazzicon";
+import { Stage, Sprite } from "@inlet/react-pixi/animated";
+import { Spring } from "react-spring";
+import { useState } from "react";
 
 import { useEffect } from "react";
+import Player from "./Player";
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
 
-function Table({ players }) {
+function Table({ id, started, address, players, hotPotatoBalances, contract }) {
   const [points, setPoints] = useState([]);
-
-  const drawJazzicon = useCallback((g, { x, y }) => {
-    g.clear();
-    g.lineStyle(22, 0xf9fafb);
-    g.drawCircle(x, y, 60);
-    g.endFill();
-  }, []);
-
-  const drawTable = useCallback((g) => {
-    g.clear();
-    g.beginFill(0x6366f1, 0.25);
-    g.drawEllipse(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 100, 60);
-    g.endFill();
-  }, []);
-
-  const generateJazzicon = (address) => {
-    const jazziconEl = jazzicon(100, jsNumberForAddress(address)).children[0];
-    jazziconEl.firstChild.remove();
-    const xml = new XMLSerializer().serializeToString(jazziconEl);
-    const svg64 = window.btoa(xml);
-    return "data:image/svg+xml;base64," + svg64;
-  };
+  const [iHaveHotPotato, setIHaveHotPotato] = useState(false);
+  const [coords, setCoords] = useState({ x: 50, y: 50 });
+  const [hotPotatoCoords, setHotPotatoCoords] = useState([]);
 
   useEffect(() => {
     // https://stackoverflow.com/questions/58534293/how-can-i-distribute-points-evenly-along-an-oval
@@ -54,21 +35,108 @@ function Table({ players }) {
     setPoints(points);
   }, [players]);
 
+  useEffect(() => {
+    const index = players.indexOf(address);
+
+    setIHaveHotPotato(
+      index !== -1 &&
+        hotPotatoBalances[index] !== undefined &&
+        parseInt(hotPotatoBalances[index]) > 0
+    );
+  }, [address, players, hotPotatoBalances]);
+
+  const transferHotPotato = async (pAddress) => {
+    try {
+      await contract.methods
+        .safeTransferFrom(address, pAddress, id, 1, 0x00)
+        .send({ from: address });
+    } catch (ex) {
+      console.log(ex);
+    }
+  };
+
+  useEffect(() => {
+    if (!started) {
+      return;
+    }
+
+    const transferSubscription = contract.events.Transfer(
+      {
+        filter: { _id: id },
+      },
+      (err, res) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+
+        const from = res.returnValues._from;
+        const to = res.returnValues._to;
+        const toPoint = points.find(({ address }) => address === to);
+
+        setHotPotatoCoords((coords) => {
+          const index = coords.findIndex(({ address }) => address === from);
+          return [
+            ...coords.slice(0, index),
+            { ...toPoint },
+            ...coords.slice(index + 1),
+          ];
+        });
+        console.log("transfer ", res);
+      }
+    );
+
+    return () => {
+      transferSubscription.unsubscribe();
+    };
+  }, [started]);
+
+  useEffect(() => {
+    const hotPotatoCoords = [];
+
+    hotPotatoBalances.forEach((val, i) => {
+      if (parseInt(val) > 0) {
+        hotPotatoCoords.push({ ...points[i] });
+      }
+    });
+
+    setHotPotatoCoords(hotPotatoCoords);
+  }, [players, hotPotatoBalances]);
+
   return (
     <Stage
       width={CANVAS_WIDTH}
       height={CANVAS_HEIGHT}
-      raf={false}
       renderOnComponentChange={true}
       options={{ antialias: true, backgroundAlpha: 0 }}
     >
-      {points.map(({ address, x, y }) => (
-        <Container key={`${x}:${y}`}>
-          <Sprite x={x} y={y} anchor={0.5} image={generateJazzicon(address)} />
-          <Graphics draw={(g) => drawJazzicon(g, { x, y })} />
-        </Container>
+      {points.map(({ address: pAddress, x, y }, i) => (
+        <Player
+          key={pAddress}
+          me={address}
+          address={pAddress}
+          iHaveHotPotato={iHaveHotPotato}
+          hasHotPotato={
+            hotPotatoBalances[i] !== undefined &&
+            parseInt(hotPotatoBalances[i]) > 0
+          }
+          x={x}
+          y={y}
+          transferHotPotato={transferHotPotato}
+        />
       ))}
-      <Graphics draw={drawTable} />
+      {hotPotatoCoords.map(({ x, y }) => (
+        <Spring native to={{ x, y }} key={address}>
+          {(coords) => (
+            <Sprite
+              scale={{ x: 0.3, y: 0.3 }}
+              anchor={0.5}
+              image="/potato.svg"
+              {...coords}
+            />
+          )}
+        </Spring>
+      ))}
     </Stage>
   );
 }

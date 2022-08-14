@@ -8,6 +8,14 @@ import "./IHotPotatoGame.sol";
 contract HotPotato is Ownable, ERC1155 {
     IHotPotatoGame public _hotPotatoGameContract;
 
+    // Add event similar to TransferBatch but with indexed _id
+    event Transfer(
+        address indexed _from,
+        address indexed _to,
+        uint256 indexed _id,
+        uint256 _value
+    );
+
     constructor() Ownable() ERC1155("") {
         _hotPotatoGameContract = IHotPotatoGame(msg.sender);
     }
@@ -49,6 +57,17 @@ contract HotPotato is Ownable, ERC1155 {
             // Token id equals game id
             _hotPotatoGameContract.endGame(ids[0]);
         }
+    }
+
+    function _afterTokenTransfer(
+        address, /* operator */
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory /* data */
+    ) internal virtual override {
+        emit Transfer(from, to, ids[0], amounts[0]);
     }
 
     function setApprovalForAll(
