@@ -96,7 +96,7 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
   }, [gameInfo]);
 
   return (
-    <div className="flex flex-col space-y-3">
+    <div className="flex flex-col space-y-3 flex-1">
       <div>
         <Label>Game ID</Label>
         <div className="text-primary">
@@ -130,23 +130,16 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
         <p className="font-bold">Waiting for leader to start de game...</p>
       )}
       {gameInfo && (
-        <Table
-          id={id}
-          started={gameStarted}
-          address={address}
-          players={gameInfo.players || []}
-          // players={[
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          //   "0x67E251A961e861F440b4673361Aa9B110A581285",
-          // ]}
-          owner={gameInfo.owner}
-          contract={hotPotatoContract}
-        />
+        <div className="flex items-center justify-center flex-1">
+          <Table
+            id={id}
+            started={gameStarted}
+            address={address}
+            players={gameInfo.players || []}
+            owner={gameInfo.owner}
+            contract={hotPotatoContract}
+          />
+        </div>
       )}
     </div>
   );
