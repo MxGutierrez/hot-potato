@@ -14,20 +14,11 @@ function Table({ id, started, address, players, contract }) {
   const [hotPotatoCoords, setHotPotatoCoords] = useState(null);
 
   useEffect(() => {
-    // https://stackoverflow.com/questions/58534293/how-can-i-distribute-points-evenly-along-an-oval
-    const [a, b, cx, cy] = [180, 140, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2];
+    const [r, cx, cy] = [200, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2];
 
     const points = players.map((address, i) => {
-      let t = (2 * Math.PI * i) / players.length;
-      t =
-        t +
-        0.4 *
-          Math.atan(
-            ((a - b) * Math.tan(t)) / (a + b * Math.tan(t) * Math.tan(t))
-          );
-      const sq = 1 / Math.hypot(a * Math.sin(t), b * Math.cos(t));
-      const x = Math.round(cx + (a - b * sq) * Math.cos(t));
-      const y = Math.round(cy + (b - a * sq) * Math.sin(t));
+      const x = cx + r * Math.cos((2 * Math.PI * i) / players.length);
+      const y = cy + r * Math.sin((2 * Math.PI * i) / players.length);
       return { address, x, y };
     });
 
