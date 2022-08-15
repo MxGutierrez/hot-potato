@@ -8,11 +8,10 @@ import Player from "./Player";
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 600;
 
-function Table({ id, started, address, players, hotPotatoBalances, contract }) {
+function Table({ id, started, address, players, contract }) {
   const [points, setPoints] = useState([]);
-  const [iHaveHotPotato, setIHaveHotPotato] = useState(false);
-  const [coords, setCoords] = useState({ x: 50, y: 50 });
-  const [hotPotatoCoords, setHotPotatoCoords] = useState([]);
+  const [hotPotatoer, setHotPotatoer] = useState(null);
+  const [hotPotatoCoords, setHotPotatoCoords] = useState(null);
 
   useEffect(() => {
     // https://stackoverflow.com/questions/58534293/how-can-i-distribute-points-evenly-along-an-oval
@@ -36,19 +35,33 @@ function Table({ id, started, address, players, hotPotatoBalances, contract }) {
   }, [players]);
 
   useEffect(() => {
-    const index = players.indexOf(address);
+    if (!started) {
+      return;
+    }
 
-    setIHaveHotPotato(
-      index !== -1 &&
-        hotPotatoBalances[index] !== undefined &&
-        parseInt(hotPotatoBalances[index]) > 0
-    );
-  }, [address, players, hotPotatoBalances]);
+    const getPlayersWithHotpotatoes = async () => {
+      const hotPotatoer = await contract.methods.ownerOf(id).call();
+
+      setHotPotatoer(hotPotatoer);
+    };
+
+    getPlayersWithHotpotatoes();
+  }, [id, started, contract]);
+
+  useEffect(() => {
+    if (!hotPotatoer) {
+      return;
+    }
+
+    const { x, y } = points.find(({ address }) => address === hotPotatoer);
+
+    setHotPotatoCoords({ x, y });
+  }, [hotPotatoer, points]);
 
   const transferHotPotato = async (pAddress) => {
     try {
       await contract.methods
-        .safeTransferFrom(address, pAddress, id, 1, 0x00)
+        .safeTransferFrom(address, pAddress, id)
         .send({ from: address });
     } catch (ex) {
       console.log(ex);
@@ -62,7 +75,7 @@ function Table({ id, started, address, players, hotPotatoBalances, contract }) {
 
     const transferSubscription = contract.events.Transfer(
       {
-        filter: { _id: id },
+        filter: { tokenId: id },
       },
       (err, res) => {
         if (err) {
@@ -70,38 +83,14 @@ function Table({ id, started, address, players, hotPotatoBalances, contract }) {
           return;
         }
 
-        const from = res.returnValues._from;
-        const to = res.returnValues._to;
-        const toPoint = points.find(({ address }) => address === to);
-
-        setHotPotatoCoords((coords) => {
-          const index = coords.findIndex(({ address }) => address === from);
-          return [
-            ...coords.slice(0, index),
-            { ...toPoint },
-            ...coords.slice(index + 1),
-          ];
-        });
-        console.log("transfer ", res);
+        setHotPotatoer(res.returnValues.to);
       }
     );
 
     return () => {
       transferSubscription.unsubscribe();
     };
-  }, [started]);
-
-  useEffect(() => {
-    const hotPotatoCoords = [];
-
-    hotPotatoBalances.forEach((val, i) => {
-      if (parseInt(val) > 0) {
-        hotPotatoCoords.push({ ...points[i] });
-      }
-    });
-
-    setHotPotatoCoords(hotPotatoCoords);
-  }, [players, hotPotatoBalances]);
+  }, [id, started, contract]);
 
   return (
     <Stage
@@ -115,18 +104,15 @@ function Table({ id, started, address, players, hotPotatoBalances, contract }) {
           key={pAddress}
           me={address}
           address={pAddress}
-          iHaveHotPotato={iHaveHotPotato}
-          hasHotPotato={
-            hotPotatoBalances[i] !== undefined &&
-            parseInt(hotPotatoBalances[i]) > 0
-          }
+          iHaveHotPotato={hotPotatoer === address}
+          hasHotPotato={hotPotatoer === pAddress}
           x={x}
           y={y}
           transferHotPotato={transferHotPotato}
         />
       ))}
-      {hotPotatoCoords.map(({ x, y }) => (
-        <Spring native to={{ x, y }} key={address}>
+      {hotPotatoCoords && (
+        <Spring native to={hotPotatoCoords}>
           {(coords) => (
             <Sprite
               scale={{ x: 0.3, y: 0.3 }}
@@ -136,7 +122,7 @@ function Table({ id, started, address, players, hotPotatoBalances, contract }) {
             />
           )}
         </Spring>
-      ))}
+      )}
     </Stage>
   );
 }

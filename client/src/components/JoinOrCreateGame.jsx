@@ -33,7 +33,7 @@ function JoinOrCreateGame({
       }
 
       const receipt = await hotPotatoGameContract.methods
-        .createGame(expirationDate.getTime() / 1000)
+        .createGame()
         .send({ from: address });
 
       setGameId(receipt.events.GameCreated.returnValues.gameId);

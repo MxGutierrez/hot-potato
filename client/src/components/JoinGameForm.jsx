@@ -3,7 +3,11 @@ import Button from "./Button";
 import Label from "./Label";
 import Spinner from "./Spinner";
 import FormError from "./FormError";
-import { GAME_ID_DIGITS, MAX_PLAYERS_IN_GAME } from "../constants";
+import {
+  GAME_ID_DIGITS,
+  MAX_PLAYERS_IN_GAME,
+  EXPIRATION_TIME_IN_DAYS,
+} from "../constants";
 import { useDebounce } from "../hooks";
 import Jazzicon, { jsNumberForAddress } from "react-jazzicon";
 import { Calendar, Clock, Search, Cross } from "./icons";
@@ -113,21 +117,25 @@ function JoinGameForm({ address, joinGame, contract, disabled }) {
           <div className="flex items-center space-x-2 my-2">
             <Clock className="w-5 h-5" />
             <p>
-              {dayjs(searchResult.expiresAt * 1000).format("MMM D, YYYY HH:mm")}
+              {dayjs(searchResult.createdAt * 1000)
+                .add(EXPIRATION_TIME_IN_DAYS, "days")
+                .format("MMM D, YYYY HH:mm")}
             </p>
           </div>
-          <div>
+          <div className="mt-5">
             <h6 className="font-semibold mb-1 flex items-center">
               Players in game
               <span className="font-light text-xs ml-1.5">
                 ({searchResult.players.length}/{MAX_PLAYERS_IN_GAME})
               </span>
             </h6>
-            {searchResult.players.map((address) => (
-              <div key={address} title={address}>
-                <Jazzicon diameter={20} seed={jsNumberForAddress(address)} />
-              </div>
-            ))}
+            <div className="flex space-x-3 mt-2">
+              {searchResult.players.map((address) => (
+                <div key={address} title={address}>
+                  <Jazzicon diameter={30} seed={jsNumberForAddress(address)} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

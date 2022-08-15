@@ -8,18 +8,14 @@ import { Clipboard } from "./icons";
 function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
   const [startingGame, setStartingGame] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [hotPotatoCount, setHotPotatoCount] = useState(2);
   const [gameInfo, setGameInfo] = useState(null);
   const [gameIdCopied, setGameIdCopied] = useState(false);
-  const [hotPotatoBalances, setHotPotatoBalances] = useState([]);
   const [fetchingGameInfo, setFetchingGameInfo] = useState(false);
 
   const startGame = async () => {
     setStartingGame(true);
     try {
-      await hotPotatoGameContract.methods
-        .startGame(id, hotPotatoCount)
-        .send({ from: address });
+      await hotPotatoGameContract.methods.startGame(id).send({ from: address });
     } catch (ex) {
       console.log("error", ex);
     } finally {
@@ -99,25 +95,6 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
     };
   }, [gameInfo]);
 
-  useEffect(() => {
-    if (!gameStarted) {
-      return;
-    }
-
-    const getPlayersWithHotpotatoes = async () => {
-      const balances = await hotPotatoContract.methods
-        .balanceOfBatch(
-          gameInfo.players,
-          Array(gameInfo.players.length).fill(id)
-        )
-        .call();
-
-      setHotPotatoBalances(balances);
-    };
-
-    getPlayersWithHotpotatoes();
-  }, [gameStarted]);
-
   return (
     <div className="flex flex-col space-y-3">
       <div>
@@ -145,25 +122,9 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
       </div>
 
       {!gameStarted && gameInfo?.owner === address && (
-        <>
-          <div>
-            <Label htmlFor="game-create-hot-potatoes">Hot potatoes</Label>
-
-            <input
-              id="game-create-hot-potatoes"
-              type="number"
-              value={hotPotatoCount}
-              onChange={(e) => setHotPotatoCount(e.target.value)}
-              className="py-0.5 flex-1"
-              autoComplete="off"
-              placeholder="12345678"
-            />
-          </div>
-
-          <Button onClick={startGame} loading={startingGame}>
-            Start game
-          </Button>
-        </>
+        <Button onClick={startGame} loading={startingGame}>
+          Start game
+        </Button>
       )}
       {!gameStarted && gameInfo?.owner !== address && (
         <p className="font-bold">Waiting for leader to start de game...</p>
@@ -174,7 +135,6 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
           started={gameStarted}
           address={address}
           players={gameInfo.players || []}
-          hotPotatoBalances={hotPotatoBalances}
           // players={[
           //   "0x67E251A961e861F440b4673361Aa9B110A581285",
           //   "0x67E251A961e861F440b4673361Aa9B110A581285",

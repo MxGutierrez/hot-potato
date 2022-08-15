@@ -7,4 +7,6 @@ interface IHotPotatoGame {
     function getPlayers(uint256) external view returns (address[] memory);
 
     function hasGameEnded(uint256) external view returns (bool);
+
+    function isPlayerInGame(address, uint256) external view returns (bool);
 }

@@ -6,8 +6,8 @@ import "./HotPotato.sol";
 import "./IHotPotatoGame.sol";
 
 contract HotPotatoGame is IHotPotatoGame {
-    uint8 constant MAX_PLAYERS = 15;
-    uint256 constant MAX_FUTURE_EXPIRATION_TIME = 1 weeks;
+    uint8 constant MAX_PLAYERS = 8;
+    uint256 constant EXPIRATION_TIME = 1 days;
     uint256 constant POTATO_GAME_ENTRY_AMOUNT = 1 * (10**18); // 20 tokens
     uint256 constant POTATO_WIN_AMOUNT = 100 * (10**18); // 100 tokens
 
@@ -22,10 +22,8 @@ contract HotPotatoGame is IHotPotatoGame {
     struct Game {
         address owner;
         uint256 createdAt;
-        uint256 expiresAt;
         uint256 startedAt;
         uint256 endedAt;
-        uint8 hotPotatoCount;
         // Mapping addresses to hot potatoes
         mapping(address => Player) players;
         address[] playerAddrs;
@@ -87,22 +85,13 @@ contract HotPotatoGame is IHotPotatoGame {
         _potatoContract = new Potato();
     }
 
-    function createGame(uint256 expiresAt) public affordsGame {
-        require(
-            block.timestamp < expiresAt,
-            "Expiration time should be in the future"
-        );
-        require(
-            block.timestamp + MAX_FUTURE_EXPIRATION_TIME >= expiresAt,
-            "Expiration time exceeds limit"
-        );
+    function createGame() public affordsGame {
         // Generate 8 digit game identifier
         uint256 gameId = uint256(keccak256(abi.encodePacked(_gameCount++))) %
             (10**8);
 
         Game storage game = _games[gameId];
         game.createdAt = block.timestamp;
-        game.expiresAt = expiresAt;
         game.owner = msg.sender;
 
         emit GameCreated(msg.sender, gameId);
@@ -110,36 +99,21 @@ contract HotPotatoGame is IHotPotatoGame {
         _addPlayer(gameId, msg.sender);
     }
 
-    function startGame(uint256 gameId, uint8 hotPotatoCount)
+    function startGame(uint256 gameId)
         public
         gameExists(gameId)
         onlyOwner(gameId)
         gameStarted(gameId, false)
     {
         require(_games[gameId].playerAddrs.length > 1, "Not enough players");
-        require(
-            hotPotatoCount < _games[gameId].playerAddrs.length,
-            "Too many hot potatoes"
-        );
-
-        _games[gameId].hotPotatoCount = hotPotatoCount;
-
-        // Copy player addresses array for temporal manipulation
-        address[] memory copy = _games[gameId].playerAddrs;
 
         // Pseudo-randomness will do
         uint256 rand = uint256(
             keccak256(abi.encodePacked(block.timestamp, block.difficulty))
         );
 
-        for (uint8 i = 0; i < _games[gameId].hotPotatoCount; i++) {
-            uint256 k = uint256(keccak256(abi.encodePacked(rand, i))) %
-                (copy.length - i);
-            _hotPotatoContract.mint(copy[k], gameId);
-
-            // Remove k indexed item
-            copy[k] = copy[copy.length - 1];
-        }
+        uint256 k = rand % (_games[gameId].playerAddrs.length);
+        _hotPotatoContract.mint(_games[gameId].playerAddrs[k], gameId);
 
         _games[gameId].startedAt = block.timestamp;
 
@@ -192,61 +166,29 @@ contract HotPotatoGame is IHotPotatoGame {
         emit GameEnded(gameId);
     }
 
-    function getWinners(uint256 gameId)
-        public
-        view
-        gameEnded(gameId, true)
-        returns (address[] memory)
-    {
-        // The amount of winners is the player count - hot potato count
-        address[] memory winners = new address[](
-            _games[gameId].playerAddrs.length - _games[gameId].hotPotatoCount
-        );
+    // function claimWin(uint256 gameId) external gameEnded(gameId, true) {
+    //     require(
+    //         _isPlayerWinner(gameId, msg.sender),
+    //         "Player not winner of game"
+    //     );
+    //     require(
+    //         _games[gameId].players[msg.sender].claimedWinAt == 0,
+    //         "Player already claimed win"
+    //     );
 
-        // Index of stored indices on winners array
-        uint256 w_idx = 0;
+    //     _games[gameId].players[msg.sender].claimedWinAt == block.timestamp;
 
-        for (uint8 i = 0; i < _games[gameId].playerAddrs.length; i++) {
-            // Check if player's address has any hot potatos
-            if (_isPlayerWinner(gameId, _games[gameId].playerAddrs[i])) {
-                winners[w_idx++] = _games[gameId].playerAddrs[i];
-            }
-        }
-        return winners;
-    }
+    //     // Split lost potato count evenly to winners
+    //     uint256 winnerCount = _games[gameId].playerAddrs.length -
+    //         _games[gameId].hotPotatoCount;
 
-    function claimWin(uint256 gameId) external gameEnded(gameId, true) {
-        require(
-            _isPlayerWinner(gameId, msg.sender),
-            "Player not winner of game"
-        );
-        require(
-            _games[gameId].players[msg.sender].claimedWinAt == 0,
-            "Player already claimed win"
-        );
+    //     uint256 lostPotatoAmount = _games[gameId].hotPotatoCount *
+    //         POTATO_GAME_ENTRY_AMOUNT;
 
-        _games[gameId].players[msg.sender].claimedWinAt == block.timestamp;
+    //     _potatoContract.transfer(msg.sender, lostPotatoAmount / winnerCount);
 
-        // Split lost potato count evenly to winners
-        uint256 winnerCount = _games[gameId].playerAddrs.length -
-            _games[gameId].hotPotatoCount;
-
-        uint256 lostPotatoAmount = _games[gameId].hotPotatoCount *
-            POTATO_GAME_ENTRY_AMOUNT;
-
-        _potatoContract.transfer(msg.sender, lostPotatoAmount / winnerCount);
-
-        emit PlayerWinClaimed(gameId, msg.sender);
-    }
-
-    function _isPlayerWinner(uint256 gameId, address player)
-        internal
-        view
-        gameEnded(gameId, true)
-        returns (bool)
-    {
-        return _hotPotatoContract.balanceOf(player, gameId) == 0;
-    }
+    //     emit PlayerWinClaimed(gameId, msg.sender);
+    // }
 
     function getPlayers(uint256 gameId)
         external
@@ -254,6 +196,14 @@ contract HotPotatoGame is IHotPotatoGame {
         returns (address[] memory)
     {
         return _games[gameId].playerAddrs;
+    }
+
+    function isPlayerInGame(address player, uint256 gameId)
+        external
+        view
+        returns (bool)
+    {
+        return _games[gameId].players[player].joinedAt > 0;
     }
 
     function hasGameEnded(uint256 gameId) external view returns (bool) {
