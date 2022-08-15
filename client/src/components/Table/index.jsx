@@ -46,7 +46,7 @@ function Table({ id, started, address, players, contract }) {
 
     const { x, y } = points.find(({ address }) => address === hotPotatoer);
 
-    setHotPotatoCoords({ x, y });
+    setHotPotatoCoords({ x: x - 30, y: y + 30 });
   }, [hotPotatoer, points]);
 
   const transferHotPotato = async (pAddress) => {
@@ -106,9 +106,9 @@ function Table({ id, started, address, players, contract }) {
         <Spring native to={hotPotatoCoords}>
           {(coords) => (
             <Sprite
-              scale={{ x: 0.3, y: 0.3 }}
+              scale={{ x: 0.6, y: 0.6 }}
               anchor={0.5}
-              image="/potato.svg"
+              image="/hot-potato.png"
               {...coords}
             />
           )}
