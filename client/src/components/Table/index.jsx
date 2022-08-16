@@ -5,8 +5,8 @@ import { useState } from "react";
 import { useEffect } from "react";
 import Player from "./Player";
 
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 600;
+const CANVAS_WIDTH = 700;
+const CANVAS_HEIGHT = 700;
 
 function Table({ id, started, address, players, contract }) {
   const [points, setPoints] = useState([]);
