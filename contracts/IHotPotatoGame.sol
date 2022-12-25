@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface IHotPotatoGame {
-    function endGame(uint256) external;
+    function endGame(uint256, address) external;
 
     function getPlayers(uint256) external view returns (address[] memory);
 

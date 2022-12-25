@@ -3,14 +3,19 @@ import clsx from "clsx";
 import Button from "./Button";
 import Table from "./Table";
 import Label from "./Label";
+import Jazzicon, { jsNumberForAddress } from "react-jazzicon";
 import { Clipboard } from "./icons";
+import { POTATO_DECIMALS } from "../constants";
 
 function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
   const [startingGame, setStartingGame] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameEndData, setGameEndData] = useState(null);
   const [gameInfo, setGameInfo] = useState(null);
   const [gameIdCopied, setGameIdCopied] = useState(false);
   const [fetchingGameInfo, setFetchingGameInfo] = useState(false);
+  const [claimingWin, setClaimingWin] = useState(false);
+  const [claimedWin, setClaimedWin] = useState(false);
 
   const startGame = async () => {
     setStartingGame(true);
@@ -20,6 +25,18 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
       console.log("error", ex);
     } finally {
       setStartingGame(false);
+    }
+  };
+
+  const claimWin = async () => {
+    setClaimingWin(true);
+    try {
+      await hotPotatoGameContract.methods.claimWin(id).send({ from: address });
+      setClaimedWin(true);
+    } catch (ex) {
+      console.log("error", ex);
+    } finally {
+      setClaimingWin(false);
     }
   };
 
@@ -88,6 +105,22 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
           setGameStarted(true);
         }
       ),
+
+      hotPotatoGameContract.events.GameEnded(
+        {
+          filter: { gameId: id },
+        },
+        (err, res) => {
+          if (err) {
+            console.log(err);
+            return;
+          }
+
+          console.log(res);
+
+          setGameEndData(res.returnValues);
+        }
+      ),
     ];
 
     return () => {
@@ -122,18 +155,60 @@ function Game({ id, address, hotPotatoGameContract, hotPotatoContract }) {
       </div>
 
       {!gameStarted && gameInfo?.owner === address && (
-        <Button onClick={startGame} loading={startingGame}>
+        <Button
+          onClick={startGame}
+          loading={startingGame}
+          className="w-[200px]"
+        >
           Start game
         </Button>
       )}
       {!gameStarted && gameInfo?.owner !== address && (
         <p className="font-bold">Waiting for leader to start de game...</p>
       )}
+      {gameEndData && (
+        <div className="space-y-6 !mt-9 bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6">
+          <h2 className="font-semibold text-xl">Game has ended!</h2>
+          <div className="flex items-center">
+            <p className={clsx({ "mr-2": gameEndData.loser !== address })}>
+              {gameEndData.loser === address ? "You" : "Player"}
+            </p>
+            {gameEndData.loser !== address && (
+              <Jazzicon
+                diameter={35}
+                seed={jsNumberForAddress(gameEndData.loser)}
+              />
+            )}
+            <p
+              className={clsx(gameEndData.loser !== address ? "ml-2" : "ml-1")}
+            >
+              couldn't handle the heat of the hot potato,{" "}
+              {gameEndData.loser === address
+                ? "better luck next time!"
+                : "congratulations on the win!"}
+            </p>
+          </div>
+          {gameEndData.loser !== address && !claimedWin && (
+            <Button
+              onClick={claimWin}
+              loading={claimingWin}
+              className="w-[200px]"
+            >
+              Claim {(gameEndData.winAmount / 10 ** POTATO_DECIMALS).toFixed(2)}{" "}
+              potatoes
+            </Button>
+          )}
+          {claimedWin && (
+            <p className="font-bold">You have claimed your win!</p>
+          )}
+        </div>
+      )}
       {gameInfo && (
         <div className="flex items-center justify-center flex-1">
           <Table
             id={id}
             started={gameStarted}
+            ended={gameEndData !== null}
             address={address}
             players={gameInfo.players || []}
             owner={gameInfo.owner}

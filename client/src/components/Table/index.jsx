@@ -8,7 +8,7 @@ import Player from "./Player";
 const CANVAS_WIDTH = 700;
 const CANVAS_HEIGHT = 700;
 
-function Table({ id, started, address, players, contract }) {
+function Table({ id, started, ended, address, players, contract }) {
   const [points, setPoints] = useState([]);
   const [hotPotatoer, setHotPotatoer] = useState(null);
   const [hotPotatoCoords, setHotPotatoCoords] = useState(null);
@@ -97,6 +97,7 @@ function Table({ id, started, address, players, contract }) {
           address={pAddress}
           iHaveHotPotato={hotPotatoer === address}
           hasHotPotato={hotPotatoer === pAddress}
+          gameEnded={ended}
           x={x}
           y={y}
           transferHotPotato={transferHotPotato}

@@ -21,13 +21,16 @@ contract HotPotato is Ownable, ERC721 {
         address to,
         uint256 tokenId
     ) internal virtual override {
-        if (
-            from == address(0) || _hotPotatoGameContract.hasGameEnded(tokenId)
-        ) {
+        if (from == address(0)) {
             // Allow transfer to take place after game has finished (result has already been persisted)
             // or if minting token
             return;
         }
+
+        require(
+            !_hotPotatoGameContract.hasGameEnded(tokenId),
+            "Game has already ended"
+        );
 
         require(
             _hotPotatoGameContract.isPlayerInGame(to, tokenId),
@@ -42,10 +45,10 @@ contract HotPotato is Ownable, ERC721 {
         uint256 playerCount = _hotPotatoGameContract.getPlayers(tokenId).length;
 
         // Check drawn number between 1-100 lays under player-count defined threshold
-        if ((rand % 100) <= (20 - playerCount)) {
-            // Token id equals game id
-            _hotPotatoGameContract.endGame(tokenId);
-        }
+        // if ((rand % 100) <= (20 - playerCount)) {
+        // Token id equals game id
+        _hotPotatoGameContract.endGame(tokenId, to);
+        // }
     }
 
     function approve(

@@ -37,7 +37,7 @@ contract HotPotatoGame is IHotPotatoGame {
 
     event GameCreated(address indexed owner, uint256 gameId);
     event GameStarted(uint256 indexed gameId);
-    event GameEnded(uint256 indexed gameId);
+    event GameEnded(uint256 indexed gameId, address loser, uint256 winAmount);
     event PlayerJoined(uint256 indexed gameId, address player);
     event PlayerWinClaimed(uint256 indexed gameId, address indexed player);
 
@@ -153,7 +153,7 @@ contract HotPotatoGame is IHotPotatoGame {
         emit PlayerJoined(gameId, player);
     }
 
-    function endGame(uint256 gameId)
+    function endGame(uint256 gameId, address loser)
         external
         gameStarted(gameId, true)
         gameEnded(gameId, false)
@@ -163,32 +163,31 @@ contract HotPotatoGame is IHotPotatoGame {
 
         _games[gameId].endedAt = block.timestamp;
 
-        emit GameEnded(gameId);
+        emit GameEnded(gameId, loser, _getWinAmount(gameId));
     }
 
-    // function claimWin(uint256 gameId) external gameEnded(gameId, true) {
-    //     require(
-    //         _isPlayerWinner(gameId, msg.sender),
-    //         "Player not winner of game"
-    //     );
-    //     require(
-    //         _games[gameId].players[msg.sender].claimedWinAt == 0,
-    //         "Player already claimed win"
-    //     );
+    function claimWin(uint256 gameId) external gameEnded(gameId, true) {
+        require(
+            _hotPotatoContract.ownerOf(gameId) != msg.sender,
+            "Player not winner of game"
+        );
+        require(
+            _games[gameId].players[msg.sender].claimedWinAt == 0,
+            "Player already claimed win"
+        );
 
-    //     _games[gameId].players[msg.sender].claimedWinAt == block.timestamp;
+        _games[gameId].players[msg.sender].claimedWinAt = block.timestamp;
 
-    //     // Split lost potato count evenly to winners
-    //     uint256 winnerCount = _games[gameId].playerAddrs.length -
-    //         _games[gameId].hotPotatoCount;
+        // Split lost potato count evenly among winners
+        _potatoContract.transfer(msg.sender, _getWinAmount(gameId));
 
-    //     uint256 lostPotatoAmount = _games[gameId].hotPotatoCount *
-    //         POTATO_GAME_ENTRY_AMOUNT;
+        emit PlayerWinClaimed(gameId, msg.sender);
+    }
 
-    //     _potatoContract.transfer(msg.sender, lostPotatoAmount / winnerCount);
-
-    //     emit PlayerWinClaimed(gameId, msg.sender);
-    // }
+    function _getWinAmount(uint256 gameId) internal view returns (uint256) {
+        uint256 winnerCount = _games[gameId].playerAddrs.length - 1;
+        return POTATO_GAME_ENTRY_AMOUNT / winnerCount;
+    }
 
     function getPlayers(uint256 gameId)
         external

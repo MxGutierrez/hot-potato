@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { jsNumberForAddress } from "react-jazzicon";
 import { Graphics, Sprite, Container, Text } from "@inlet/react-pixi";
 import { TextStyle } from "pixi.js";
@@ -8,6 +8,7 @@ import jazzicon from "jazzicon";
 function Player({
   me,
   iHaveHotPotato,
+  gameEnded,
   address,
   hasHotPotato,
   x,
@@ -17,6 +18,11 @@ function Player({
   const [playerJazzicon, setPlayerJazzicon] = useState(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [transferingHotPotato, setTransferingHotPotato] = useState(null);
+
+  const canTransfer = useMemo(
+    () => me !== address && iHaveHotPotato && !hasHotPotato && !gameEnded,
+    [me, iHaveHotPotato, hasHotPotato, gameEnded, address]
+  );
 
   const drawJazzicon = useCallback((g, { x, y }) => {
     g.clear();
@@ -53,14 +59,8 @@ function Player({
     <Container
       interactive={true}
       buttonMode={true}
-      pointerdown={
-        me !== address && iHaveHotPotato && !hasHotPotato && transfer
-      }
-      cursor={
-        me !== address && iHaveHotPotato && !hasHotPotato
-          ? "pointer"
-          : "default"
-      }
+      pointerdown={canTransfer && transfer}
+      cursor={canTransfer ? "pointer" : "default"}
       mouseover={() => setShowTooltip(true)}
       mouseout={() => setShowTooltip(false)}
     >
