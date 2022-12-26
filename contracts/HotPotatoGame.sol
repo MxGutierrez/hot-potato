@@ -8,8 +8,7 @@ import "./IHotPotatoGame.sol";
 contract HotPotatoGame is IHotPotatoGame {
     uint8 constant MAX_PLAYERS = 8;
     uint256 constant EXPIRATION_TIME = 1 days;
-    uint256 constant POTATO_GAME_ENTRY_AMOUNT = 1 * (10**18); // 20 tokens
-    uint256 constant POTATO_WIN_AMOUNT = 100 * (10**18); // 100 tokens
+    uint256 constant POTATO_GAME_ENTRY_AMOUNT = 20 * (10**18); // 20 tokens
 
     HotPotato public _hotPotatoContract;
     Potato public _potatoContract;

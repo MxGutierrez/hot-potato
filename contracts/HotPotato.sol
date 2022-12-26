@@ -45,10 +45,10 @@ contract HotPotato is Ownable, ERC721 {
         uint256 playerCount = _hotPotatoGameContract.getPlayers(tokenId).length;
 
         // Check drawn number between 1-100 lays under player-count defined threshold
-        // if ((rand % 100) <= (20 - playerCount)) {
-        // Token id equals game id
-        _hotPotatoGameContract.endGame(tokenId, to);
-        // }
+        if ((rand % 100) <= (20 - playerCount)) {
+            // Token id equals game id
+            _hotPotatoGameContract.endGame(tokenId, to);
+        }
     }
 
     function approve(

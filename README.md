@@ -9,4 +9,4 @@
 
 # Hot potato
 
-The classic game of Hot Potato but the hot potato is now an Ethereum non-fungible token (NFT)
+The classic game of Hot Potato but this time the hot potato is an Ethereum non-fungible token (NFT).
