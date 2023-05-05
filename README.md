@@ -45,7 +45,7 @@ Log in to your account, make sure you have 20 POT, and paste in the game ID prev
 
 ### Starting game
 
-Once players have joined, the leader player will go ahead and click start game. This will start the game for all players.
+Once players have joined, the leader player will go ahead and click start game. This will start the game for all players. A randomly chosen player will be honored with starting off with the hot potato in hands.
 
 ![start](https://user-images.githubusercontent.com/46251023/209584841-096bebe0-92e1-46f3-95a5-8ff52a1d6106.gif)
 
